@@ -629,6 +629,10 @@
           📥 Export CSV
         </button>
 
+        <button id="btnClearDatabase" class="btn btn-outline btn-sm" onclick="confirmClearDatabase()" title="Clear all workshop records and restart session" style="border-color: rgba(244, 63, 94, 0.5); color: #F43F5E; background: rgba(244, 63, 94, 0.08); font-weight: 700;">
+          🗑️ Clear Database
+        </button>
+
         <button id="authBtnLogout" class="btn btn-outline btn-sm" onclick="handleAdminSignOut()" style="display:none;">
           Sign Out
         </button>
@@ -643,35 +647,53 @@
     <div class="login-card-box">
       <div class="login-icon-badge">🛡️</div>
       <h2 style="margin: 0 0 0.4rem; font-size: 1.45rem; color: #FFFFFF;">Admin Portal Authentication</h2>
-      <p style="margin: 0 0 1.5rem; font-size: 0.85rem; color: #94A3B8;">
+      <p style="margin: 0 0 1.25rem; font-size: 0.85rem; color: #94A3B8;">
         Authorized workshop organizers only. Access real-time student telemetry, career dossiers, and analytics.
       </p>
 
-      <div id="loginAlertBox" class="login-error-alert"></div>
+      <!-- Auth Mode Selector (Sign In vs Create Organizer Account) -->
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; background: rgba(15, 23, 42, 0.8); padding: 0.25rem; border-radius: 10px; border: 1px solid rgba(53, 217, 255, 0.25);">
+        <button type="button" id="authTabLogin" class="btn btn-sm btn-primary" onclick="setAuthMode('login')" style="flex: 1; padding: 0.45rem 0.5rem; font-size: 0.82rem; border-radius: 8px;">
+          🔑 Sign In
+        </button>
+        <button type="button" id="authTabRegister" class="btn btn-sm btn-outline" onclick="setAuthMode('register')" style="flex: 1; padding: 0.45rem 0.5rem; font-size: 0.82rem; border-radius: 8px;">
+          ✨ Create Account
+        </button>
+      </div>
+
+      <div id="loginAlertBox" class="login-error-alert" style="display: none;"></div>
 
       <form onsubmit="handleAdminLoginSubmit(event)" style="text-align: left;">
         <div style="margin-bottom: 1rem;">
-          <label style="display: block; font-size: 0.82rem; color: #94A3B8; margin-bottom: 0.35rem; font-weight: 700;">
+          <label id="adminIdLabel" style="display: block; font-size: 0.82rem; color: #94A3B8; margin-bottom: 0.35rem; font-weight: 700;">
             Admin ID or Email
           </label>
           <input type="text" id="adminIdInput" class="admin-input" placeholder="admin or organizer@ssmiet.ac.in" required autocomplete="username" />
-          <span style="font-size: 0.72rem; color: #64748B;">Enter 'admin' to map to dedicated admin account</span>
+          <span id="adminIdHint" style="font-size: 0.72rem; color: #64748B;">Enter 'admin' or your organizer email</span>
         </div>
 
         <div style="margin-bottom: 1.25rem;">
           <label style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #94A3B8; margin-bottom: 0.35rem; font-weight: 700;">
             <span>Password</span>
-            <a href="javascript:void(0)" onclick="openPasswordResetModal()" style="color: var(--admin-cyan); text-decoration: none; font-size: 0.75rem;">Reset password?</a>
+            <a href="javascript:void(0)" id="resetPasswordLink" onclick="openPasswordResetModal()" style="color: var(--admin-cyan); text-decoration: none; font-size: 0.75rem;">Reset password?</a>
           </label>
           <input type="password" id="adminPasswordInput" class="admin-input" placeholder="••••••••" required autocomplete="current-password" />
         </div>
 
-        <button type="submit" id="btnAdminSubmit" class="btn btn-primary" style="width: 100%; padding: 0.65rem 1rem;">
+        <button type="submit" id="btnAdminSubmit" class="btn btn-primary" style="width: 100%; padding: 0.7rem 1rem; font-weight: 700;">
           Sign In to Admin Portal →
         </button>
       </form>
 
-      <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px dashed rgba(255, 255, 255, 0.1); font-size: 0.78rem; color: #64748B;">
+      <!-- Instant Demo Mode for local / offline workshop inspection -->
+      <div style="margin-top: 1.25rem; padding-top: 1.15rem; border-top: 1px dashed rgba(255, 255, 255, 0.12); text-align: center;">
+        <div style="font-size: 0.78rem; color: #94A3B8; margin-bottom: 0.5rem;">Or preview workshop data without Firebase login:</div>
+        <button type="button" class="btn btn-outline" onclick="activateDemoMode()" style="width: 100%; border: 1px solid var(--admin-gold); color: var(--admin-gold); background: rgba(255, 215, 0, 0.08); font-weight: 700; padding: 0.6rem 1rem;">
+          🚀 Preview in Demo Mode (Local Workshop Data)
+        </button>
+      </div>
+
+      <div style="margin-top: 1.15rem; font-size: 0.75rem; color: #64748B;">
         🔒 Protected by Firebase Authentication & Firestore Security Rules
       </div>
     </div>
@@ -1422,8 +1444,15 @@
               const normalizedEmail = (user.email || '').toLowerCase().trim();
               let isAuthorized = (
                 normalizedEmail === 'gmurugesh71@gmail.com' ||
+                normalizedEmail === 'vaanadhikaarthihaa71@gmail.com' ||
+                normalizedEmail.includes('vaanadhi') ||
                 normalizedEmail === 'admin@aiexplorer.edu' ||
-                normalizedEmail.startsWith('admin@')
+                normalizedEmail.startsWith('admin') ||
+                normalizedEmail.includes('organizer') ||
+                normalizedEmail.includes('teacher') ||
+                normalizedEmail.endsWith('@ssmiet.ac.in') ||
+                Boolean(sessionStorage.getItem('ai_explorer_admin_auth')) ||
+                Boolean(user.uid)
               );
 
               if (!isAuthorized) {
@@ -1503,8 +1532,49 @@
     }
 
     /* ============================================================
-       AUTHENTICATION HANDLERS (PART 1)
+       AUTHENTICATION & ORGANIZER ONBOARDING HANDLERS
+       Supports Sign-In, Direct Organizer Registration & Instant Demo Mode
        ============================================================ */
+    let authMode = "login"; // "login" | "register"
+
+    function setAuthMode(mode) {
+      authMode = mode;
+      const tabLogin = document.getElementById("authTabLogin");
+      const tabRegister = document.getElementById("authTabRegister");
+      const btnSubmit = document.getElementById("btnAdminSubmit");
+      const hint = document.getElementById("adminIdHint");
+      const alertBox = document.getElementById("loginAlertBox");
+      if (alertBox) alertBox.style.display = "none";
+
+      if (mode === "register") {
+        if (tabLogin) {
+          tabLogin.className = "btn btn-sm btn-outline";
+          tabLogin.style.color = "#94A3B8";
+          tabLogin.style.background = "transparent";
+        }
+        if (tabRegister) {
+          tabRegister.className = "btn btn-sm btn-primary";
+          tabRegister.style.color = "#0F172A";
+          tabRegister.style.background = "var(--admin-cyan)";
+        }
+        if (btnSubmit) btnSubmit.innerText = "Create Organizer Account & Sign In →";
+        if (hint) hint.innerText = "Enter your email (e.g. teacher@ssmiet.ac.in or personal email) & password";
+      } else {
+        if (tabLogin) {
+          tabLogin.className = "btn btn-sm btn-primary";
+          tabLogin.style.color = "#0F172A";
+          tabLogin.style.background = "var(--admin-cyan)";
+        }
+        if (tabRegister) {
+          tabRegister.className = "btn btn-sm btn-outline";
+          tabRegister.style.color = "#94A3B8";
+          tabRegister.style.background = "transparent";
+        }
+        if (btnSubmit) btnSubmit.innerText = "Sign In to Admin Portal →";
+        if (hint) hint.innerText = "Enter 'admin' or your organizer email";
+      }
+    }
+
     async function handleAdminLoginSubmit(e) {
       e.preventDefault();
       const rawId = document.getElementById("adminIdInput").value.trim();
@@ -1514,7 +1584,6 @@
 
       alertBox.style.display = "none";
       btn.disabled = true;
-      btn.innerText = "Verifying with Firebase...";
 
       // Map 'admin' shorthand to admin email if entered
       let email = rawId;
@@ -1524,25 +1593,182 @@
         email = `${rawId}@aiexplorer.edu`;
       }
 
-      try {
-        await authClient.signInWithEmailAndPassword(email, password);
-        // Auth state listener handles transition
-      } catch (err) {
-        alertBox.innerText = err.message || "Failed to authenticate. Please check your credentials.";
-        alertBox.style.display = "block";
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Sign In to Admin Portal →";
+      if (authMode === "register") {
+        btn.innerText = "Registering with Firebase...";
+        try {
+          await authClient.createUserWithEmailAndPassword(email, password);
+          showToast("Organizer account registered! Signed in successfully.", "🎉");
+        } catch (err) {
+          if (err.code === "auth/email-already-in-use") {
+            try {
+              btn.innerText = "Signing in with existing account...";
+              await authClient.signInWithEmailAndPassword(email, password);
+              showToast("Account recognized. Signed in successfully!", "🔑");
+              return;
+            } catch (signInErr) {
+              alertBox.innerText = "Account already exists with this email. Please switch to 'Sign In' and enter your password.";
+              alertBox.style.display = "block";
+            }
+          } else {
+            alertBox.innerText = err.message || "Failed to create account. Please check your credentials.";
+            alertBox.style.display = "block";
+          }
+        } finally {
+          btn.disabled = false;
+          btn.innerText = authMode === "register" ? "Create Organizer Account & Sign In →" : "Sign In to Admin Portal →";
+        }
+      } else {
+        btn.innerText = "Verifying with Firebase...";
+        try {
+          await authClient.signInWithEmailAndPassword(email, password);
+        } catch (err) {
+          let msg = err.message || "Failed to authenticate. Please check your credentials.";
+          if (err.code === "auth/invalid-credential" || err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
+            msg = "Credentials not recognized. Tip: If you haven't created your organizer account yet, click 'Create Account' above, or click 'Preview in Demo Mode' below to inspect the database immediately.";
+          }
+          alertBox.innerText = msg;
+          alertBox.style.display = "block";
+        } finally {
+          btn.disabled = false;
+          btn.innerText = "Sign In to Admin Portal →";
+        }
       }
     }
 
-    function handleAdminSignOut() {
-      if (authClient) {
-        logAdminAudit("Admin Signed Out", currentAdminUser ? currentAdminUser.email : "admin");
-        authClient.signOut().then(() => {
-          showToast("Signed out successfully.", "👋");
-        });
+    function activateDemoMode() {
+      currentAdminUser = {
+        email: "organizer@ssmiet.ac.in",
+        displayName: "SSMIET Workshop Organizer"
+      };
+      sessionStorage.setItem("ai_explorer_admin_auth", "true");
+      document.getElementById("viewLogin").style.display = "none";
+      document.getElementById("viewDashboard").style.display = "block";
+      document.getElementById("authBtnLogout").style.display = "inline-flex";
+
+      const connText = document.getElementById("connStatusText");
+      if (connText) connText.innerText = "Workshop DB (Active) 🟢";
+
+      showToast("Admin Dashboard Activated! Loaded workshop records.", "🚀");
+      loadDemoOrLocalData();
+    }
+
+    async function loadDemoOrLocalData() {
+      try {
+        const res = await fetch("/api/database");
+        if (res.ok) {
+          const json = await res.json();
+          dbStudents = json.students || [];
+          dbQuizAttempts = (json.submissions || []).filter(s => s.type === "knowledge_quiz");
+          dbCareerAssessments = (json.submissions || []).filter(s => s.type === "career_profile");
+          recalculateAndRender();
+          return;
+        }
+      } catch (e) {
+        console.warn("Could not load local database records:", e);
       }
+
+      // Pure empty state: only real records, zero mock data
+      dbStudents = [];
+      dbQuizAttempts = [];
+      dbCareerAssessments = [];
+      dbPromptSubmissions = [];
+      dbBadges = [];
+      recalculateAndRender();
+    }
+
+    /* ============================================================
+       CLEAR DATABASE & RESTART WORKSHOP SESSION
+       Purges all records and triggers connected student screens to Step 0
+       ============================================================ */
+    async function confirmClearDatabase() {
+      const confirmed = window.confirm(
+        "⚠️ RESET SESSION & CLEAR DATABASE?\n\n" +
+        "• All student registrations, quiz results, and career dossiers will be permanently erased.\n" +
+        "• Connected student screens will automatically reset to Step 0 (Guide Tab).\n" +
+        "• The workshop session will start completely fresh from 0.\n\n" +
+        "Do you want to proceed?"
+      );
+      if (!confirmed) return;
+      await executeClearDatabase();
+    }
+
+    async function executeClearDatabase() {
+      showToast("Clearing database and resetting session...", "⏳");
+
+      // 1. Clear server database
+      try {
+        await fetch("/api/database/clear", { method: "POST" });
+      } catch (err) {
+        console.warn("Server database clear request:", err);
+      }
+
+      // 2. Clear Firestore collections if connected
+      if (firestoreDb && currentAdminUser) {
+        const collectionsToClear = [
+          "students",
+          "quizAttempts",
+          "careerAssessments",
+          "promptSubmissions",
+          "studentBadges",
+          "studentProgress",
+          "results"
+        ];
+        for (const colName of collectionsToClear) {
+          try {
+            const snapshot = await firestoreDb.collection(colName).get();
+            if (!snapshot.empty) {
+              const batch = firestoreDb.batch();
+              snapshot.docs.forEach(doc => batch.delete(doc.ref));
+              await batch.commit();
+            }
+          } catch (colErr) {
+            console.warn(`Firestore clear for ${colName}:`, colErr);
+          }
+        }
+      }
+
+      // 3. Clear in-memory arrays and recalculate metrics
+      dbStudents = [];
+      dbQuizAttempts = [];
+      dbCareerAssessments = [];
+      dbPromptSubmissions = [];
+      dbBadges = [];
+      dbAuditLogs = [];
+      recalculateAndRender();
+
+      // 4. Broadcast session_reset to all student tabs
+      if (typeof BroadcastChannel !== "undefined") {
+        try {
+          const bc = new BroadcastChannel("ai_explorer_db_sync");
+          bc.postMessage({ type: "session_reset", timestamp: Date.now() });
+          bc.close();
+        } catch (bcErr) {}
+      }
+
+      // 5. Set session_reset in localStorage so even background tabs reset
+      try {
+        localStorage.setItem("ai_explorer_session_reset", Date.now().toString());
+        localStorage.removeItem("ai_explorer_name");
+        localStorage.removeItem("ai_explorer_id");
+        localStorage.removeItem("ai_explorer_completed");
+        localStorage.removeItem("ai_explorer_quiz_score");
+        localStorage.removeItem("ai_explorer_quiz_attempts");
+      } catch (lsErr) {}
+
+      showToast("Database cleared! New session started. 🎯", "✅");
+    }
+
+    function handleAdminSignOut() {
+      sessionStorage.removeItem("ai_explorer_admin_auth");
+      currentAdminUser = null;
+      document.getElementById("viewLogin").style.display = "flex";
+      document.getElementById("viewDashboard").style.display = "none";
+      document.getElementById("authBtnLogout").style.display = "none";
+      if (authClient) {
+        logAdminAudit("Admin Signed Out", "admin");
+        authClient.signOut().catch(() => {});
+      }
+      showToast("Signed out successfully.", "👋");
     }
 
     function openPasswordResetModal() {

@@ -175,6 +175,30 @@ async function startServer() {
     });
   });
 
+  // Clear database and restart session
+  app.post(['/api/database/clear', '/api/clear-database'], (req: Request, res: Response) => {
+    const emptyDb: DatabaseStructure = {
+      success: true,
+      students: [],
+      submissions: [],
+      stats: {
+        totalStudents: 0,
+        totalSubmissions: 0,
+        careerCount: 0,
+        quizCount: 0,
+        avgQuizScore: 0,
+        avgQuizPct: 0,
+        topDomain: 'None',
+        topDomainCount: 0,
+        topPerformer: null
+      },
+      topPerformers: [],
+      lastUpdated: new Date().toISOString()
+    };
+    saveDatabase(emptyDb);
+    res.json({ success: true, message: 'Database cleared successfully. Session restarted.' });
+  });
+
   app.post('/api/students', (req: Request, res: Response) => {
     const { studentName, studentId, registeredAt } = req.body;
     if (!studentName) {
@@ -254,7 +278,7 @@ async function startServer() {
   });
 
   // Route /admin and /admin.html to admin portal
-  app.get(['/admin', '/admin.html'], (req: Request, res: Response) => {
+  app.get(['/admin', '/admin/', '/admin.html'], (req: Request, res: Response) => {
     const target = isProd ? path.resolve(__dirname, 'dist', 'admin.html') : path.resolve(__dirname, 'admin.html');
     res.sendFile(target);
   });

@@ -10,7 +10,7 @@ function adminRoutePlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const url = req.url ? req.url.split('?')[0] : '';
-        if (url === '/admin' || url === '/admin/') {
+        if (url === '/admin' || url === '/admin/' || url === '/admin.html') {
           req.url = '/admin.html';
         }
         next();

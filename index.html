@@ -476,8 +476,8 @@
 </head>
 <body>
 
-  <!-- Confetti Canvas for Celebratory Moments -->
-  <canvas id="confettiCanvas" class="confetti-canvas-overlay"></canvas>
+  <!-- Confetti Canvas for Celebratory Moments (pointer-events: none ensures no clicks are intercepted) -->
+  <canvas id="confettiCanvas" class="confetti-canvas-overlay" style="pointer-events: none !important;"></canvas>
 
   <!-- ============================================================
        TOP HEADER: SITE NAME, ID CHIP, GLOBAL LANGUAGE, THEME TOGGLE
@@ -500,10 +500,10 @@
             <span id="chipText">EXPLORER</span>
           </div>
 
-          <!-- Organizer / Admin Console Link (PART 1: Dedicated Admin Portal) -->
-          <a href="/admin" class="theme-toggle-btn" title="Organizer & Teacher Admin Console" aria-label="Open Workshop Admin Console" style="text-decoration: none; font-size: 0.85rem; font-weight: 700; gap: 0.35rem; padding: 0.4rem 0.75rem;">
+          <!-- Organizer / Admin Portal Button (Direct Navigation to /admin) -->
+          <a href="/admin" id="adminPortalBtn" class="theme-toggle-btn admin-portal-btn" title="Organizer & Teacher Admin Portal" aria-label="Open Workshop Admin Portal" role="button" tabindex="0" onclick="handleAdminPortalClick(event)" style="text-decoration: none; font-size: 0.85rem; font-weight: 700; gap: 0.35rem; padding: 0.4rem 0.75rem; position: relative; z-index: 105; cursor: pointer; pointer-events: auto;">
             <span>📊</span>
-            <span style="font-size: 0.82rem; font-family: var(--font-heading);" id="headerAdminText">Admin</span>
+            <span style="font-size: 0.82rem; font-family: var(--font-heading);" id="headerAdminText">Admin Portal</span>
           </a>
 
           <!-- GLOBAL BILINGUAL LANGUAGE SWITCHER (EN | தமிழ்) -->
@@ -1583,6 +1583,11 @@
   <footer id="siteFooter">
     <div class="container">
       <p id="footerText">AI Explorer · Department of Computer Science and Engineering (CSE), SSM Institute of Engineering and Technology (SSMIET), Dindigul.</p>
+      <p style="margin-top: 0.5rem; font-size: 0.82rem;">
+        <a href="/admin" id="footerAdminLink" onclick="handleAdminPortalClick(event)" style="color: var(--accent-purple, #6e44ff); text-decoration: none; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;">
+          <span>🛡️</span> Organizer & Teacher Admin Portal →
+        </a>
+      </p>
     </div>
   </footer>
 
@@ -3726,6 +3731,14 @@
       }
     }
 
+    function safeStorageRemove(key) {
+      try {
+        localStorage.removeItem(key);
+      } catch (e) {
+        console.warn("Storage remove error:", e);
+      }
+    }
+
     /* ============================================================
        CENTRAL DATABASE PERSISTENCE & REAL-TIME ADMIN SYNC
        Saves to Firestore (students, quizAttempts, promptSubmissions, careerAssessments, studentBadges),
@@ -4150,10 +4163,30 @@
     }
 
     /* ============================================================
+       ADMIN PORTAL DIRECT NAVIGATION
+       Guarantees smooth transition to /admin route on all hosts (Vercel, local dev)
+       ============================================================ */
+    function handleAdminPortalClick(event) {
+      if (event) {
+        // Allow user to open in new tab with modifier keys or middle-click
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.button === 1) {
+          return true;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      window.location.assign("/admin");
+      return false;
+    }
+    window.handleAdminPortalClick = handleAdminPortalClick;
+
+    /* ============================================================
        INITIALIZATION
        ============================================================ */
     window.addEventListener("DOMContentLoaded", () => {
       initTheme();
+      initAdminNavigation();
+      initSessionResetListener();
       loadSavedState();
       renderToolDots();
       renderToolCard(STATE.unlockedToolIndex);
@@ -4163,6 +4196,62 @@
       initKnowledgeQuiz();
       updateProgressDisplay();
     });
+
+    function initSessionResetListener() {
+      if (typeof BroadcastChannel !== "undefined") {
+        try {
+          const bc = new BroadcastChannel("ai_explorer_db_sync");
+          bc.onmessage = (event) => {
+            if (event.data && event.data.type === "session_reset") {
+              handleSessionReset();
+            }
+          };
+        } catch (e) {}
+      }
+      window.addEventListener("storage", (e) => {
+        if (e.key === "ai_explorer_session_reset") {
+          handleSessionReset();
+        }
+      });
+    }
+
+    function handleSessionReset() {
+      safeStorageRemove("ai_explorer_name");
+      safeStorageRemove("ai_explorer_id");
+      safeStorageRemove("ai_explorer_completed");
+      safeStorageRemove("ai_explorer_quiz_attempts");
+      safeStorageRemove("ai_explorer_quiz_score");
+      safeStorageRemove("ai_explorer_max_tool");
+      safeStorageRemove("ai_explorer_resistant_cards");
+
+      STATE.studentName = "";
+      STATE.studentId = "";
+      STATE.completedSections = new Set();
+      STATE.unlockedToolIndex = 0;
+      STATE.openedResistantCards = new Set();
+
+      const nameInput = document.getElementById("studentNameInput");
+      if (nameInput) nameInput.value = "";
+      const chip = document.getElementById("studentIdChip");
+      if (chip) chip.style.display = "none";
+
+      updateProgressDisplay();
+      switchTab("guide");
+      showToast("🔄 Organizer reset the workshop session! Please create your Explorer ID to begin.");
+    }
+
+    function initAdminNavigation() {
+      const adminBtn = document.getElementById("adminPortalBtn");
+      if (adminBtn) {
+        adminBtn.removeEventListener("click", handleAdminPortalClick);
+        adminBtn.addEventListener("click", handleAdminPortalClick);
+      }
+      const footerLink = document.getElementById("footerAdminLink");
+      if (footerLink) {
+        footerLink.removeEventListener("click", handleAdminPortalClick);
+        footerLink.addEventListener("click", handleAdminPortalClick);
+      }
+    }
 
     function initTheme() {
       // NON-NEGOTIABLE: Light theme only across the entire application
@@ -6054,7 +6143,7 @@
       en: {
         brandTitleMain: 'AI EXPLORER <span class="brand-badge">Class 12</span>',
         brandSubtitle: 'SSMIET CSE · 2026 EDITION',
-        headerAdminText: 'Admin Console',
+        headerAdminText: 'Admin Portal',
         tabGuide: '1. Guide',
         tabGym: '2. Prompt Gym',
         tabTools: '3. AI Tools',
