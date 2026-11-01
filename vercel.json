@@ -1,5 +1,6 @@
 {
   "buildCommand": "vite build",
+  "installCommand": "npm install --legacy-peer-deps",
   "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
