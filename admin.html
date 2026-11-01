@@ -1415,10 +1415,50 @@
 
           if (connText) connText.innerText = "Firestore Connected 🟢";
 
-          // Listen to Authentication State
-          authClient.onAuthStateChanged(user => {
+          // Listen to Authentication State & Enforce Admin Role
+          authClient.onAuthStateChanged(async (user) => {
             if (user) {
-              // Verify admin authorization
+              // Strict Admin Role Verification
+              const normalizedEmail = (user.email || '').toLowerCase().trim();
+              let isAuthorized = (
+                normalizedEmail === 'gmurugesh71@gmail.com' ||
+                normalizedEmail === 'admin@aiexplorer.edu' ||
+                normalizedEmail.startsWith('admin@')
+              );
+
+              if (!isAuthorized) {
+                try {
+                  const tokenResult = await user.getIdTokenResult();
+                  if (tokenResult.claims && tokenResult.claims.admin) {
+                    isAuthorized = true;
+                  } else {
+                    const adminDoc = await firestoreDb.collection("admins").doc(user.uid).get();
+                    if (adminDoc.exists) {
+                      isAuthorized = true;
+                    }
+                  }
+                } catch (roleErr) {
+                  console.warn("Role verification lookup:", roleErr);
+                }
+              }
+
+              if (!isAuthorized) {
+                currentAdminUser = null;
+                document.getElementById("viewLogin").style.display = "flex";
+                document.getElementById("viewDashboard").style.display = "none";
+                document.getElementById("authBtnLogout").style.display = "none";
+
+                const alertBox = document.getElementById("loginAlertBox");
+                if (alertBox) {
+                  alertBox.innerText = `Access Denied: Account (${user.email}) does not have Administrator privileges.`;
+                  alertBox.style.display = "block";
+                }
+                showToast("Access Denied: Admin privileges required.", "🚫");
+                await authClient.signOut();
+                return;
+              }
+
+              // Authorized Admin Verified
               currentAdminUser = user;
               document.getElementById("viewLogin").style.display = "none";
               document.getElementById("viewDashboard").style.display = "block";
