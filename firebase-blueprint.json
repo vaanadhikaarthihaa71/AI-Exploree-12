@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "entities": {
+    "students": {
+      "type": "object",
+      "description": "Registered students participating in the AI Explorer workshop",
+      "properties": {
+        "studentId": { "type": "string", "description": "Unique Explorer ID code" },
+        "studentName": { "type": "string", "description": "Student full name or alias" },
+        "email": { "type": "string", "description": "Optional registered email" },
+        "school": { "type": "string", "description": "School name or institution" },
+        "district": { "type": "string", "description": "City or district" },
+        "classGrade": { "type": "string", "description": "Grade level e.g. 12th" },
+        "stream": { "type": "string", "description": "Academic stream e.g. PCM, PCB, Commerce" },
+        "registeredAt": { "type": "string", "format": "date-time" },
+        "lastActive": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "description": "Current status" },
+        "totalQuizAttempts": { "type": "number" },
+        "highestScore": { "type": "number" },
+        "totalScore": { "type": "number" },
+        "averageAccuracy": { "type": "number" },
+        "badgeCount": { "type": "number" },
+        "careerCompleted": { "type": "boolean" },
+        "promptGymCompleted": { "type": "boolean" },
+        "overallProgress": { "type": "number" }
+      },
+      "required": ["studentId", "studentName", "registeredAt"]
+    },
+    "quizAttempts": {
+      "type": "object",
+      "description": "Recorded attempts and performance on the Knowledge Quiz",
+      "properties": {
+        "attemptId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "score": { "type": "number" },
+        "totalQuestions": { "type": "number" },
+        "percentage": { "type": "number" },
+        "timeSeconds": { "type": "number" },
+        "timeFormatted": { "type": "string" },
+        "badge": { "type": "string" },
+        "quizLanguage": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "wrongAnswersCount": { "type": "number" },
+        "answersSummary": { "type": "array" }
+      },
+      "required": ["studentId", "studentName", "score", "totalQuestions", "createdAt"]
+    },
+    "studentProgress": {
+      "type": "object",
+      "description": "Overall curriculum progress per student",
+      "properties": {
+        "studentId": { "type": "string" },
+        "completedSections": { "type": "array", "items": { "type": "string" } },
+        "progressPct": { "type": "number" },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "progressPct"]
+    },
+    "promptSubmissions": {
+      "type": "object",
+      "description": "Student prompt submissions in the Prompt Gym",
+      "properties": {
+        "submissionId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "promptText": { "type": "string" },
+        "score": { "type": "number" },
+        "ingredients": { "type": "object" },
+        "submittedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "studentName", "promptText", "score", "submittedAt"]
+    },
+    "careerAssessments": {
+      "type": "object",
+      "description": "Completed student career profile assessments and recommendations",
+      "properties": {
+        "assessmentId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "school": { "type": "string" },
+        "stream": { "type": "string" },
+        "favSubjects": { "type": "array" },
+        "mathComfort": { "type": "number" },
+        "codingComfort": { "type": "number" },
+        "hobbies": { "type": "array" },
+        "topMatches": { "type": "array" },
+        "profileAnalysis": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "studentName", "topMatches", "createdAt"]
+    },
+    "studentBadges": {
+      "type": "object",
+      "description": "Badges and achievements earned by students",
+      "properties": {
+        "badgeId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "badgeName": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "earnedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "studentName", "badgeName", "earnedAt"]
+    },
+    "adminAuditLogs": {
+      "type": "object",
+      "description": "Audit trails for admin operations and actions",
+      "properties": {
+        "logId": { "type": "string" },
+        "adminEmail": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["adminEmail", "action", "timestamp"]
+    },
+    "admins": {
+      "type": "object",
+      "description": "Registered administrators with privileged access",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role"]
+    }
+  }
+}

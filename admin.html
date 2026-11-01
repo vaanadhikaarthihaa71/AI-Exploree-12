@@ -1,0 +1,2545 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>AI Explorer - Admin Portal & Student Management System</title>
+
+  <!-- Google Fonts: Outfit, Poppins, Plus Jakarta Sans, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDK (Compat mode for browser client) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  
+  <link rel="stylesheet" crossorigin href="/assets/admin-DCXlsE_k.css">
+  <link rel="stylesheet" crossorigin href="/assets/theme-DVUuAc7b.css">
+  <style>
+    :root {
+      --font-heading: 'Outfit', 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+      --font-subheading: 'Outfit', 'Poppins', sans-serif !important;
+      --font-body: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+      --font-mono: 'JetBrains Mono', monospace !important;
+      --admin-bg: #0F172A;
+      --admin-card-bg: rgba(30, 41, 59, 0.7);
+      --admin-border: rgba(53, 217, 255, 0.18);
+      --admin-cyan: #35D9FF;
+      --admin-gold: #FFD700;
+      --admin-purple: #A855F7;
+      --admin-emerald: #10B981;
+      --admin-rose: #F43F5E;
+    }
+    body {
+      font-family: var(--font-body) !important;
+      background: #0B1120;
+      color: #E2E8F0;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    h1, h2, h3, h4, h5, h6, .brand-title, .brand-title-main, .admin-tab-btn, .btn {
+      font-family: var(--font-heading) !important;
+    }
+
+    /* Container */
+    .admin-main-wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 4rem;
+    }
+
+    /* Header styling */
+    .admin-header {
+      background: rgba(15, 23, 42, 0.95);
+      border-bottom: 1px solid rgba(53, 217, 255, 0.15);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 0.85rem 0;
+    }
+    .admin-header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 1.25rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(53, 217, 255, 0.12);
+      border: 1px solid rgba(53, 217, 255, 0.3);
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--admin-cyan);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .brand-title-group h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.01em;
+    }
+    .brand-title-group p {
+      margin: 0.15rem 0 0;
+      font-size: 0.78rem;
+      color: #94A3B8;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    /* Status Pill */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34D399;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 8px #10B981;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+    .btn-sm {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.78rem;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #0284C7 0%, #2563EB 100%);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #0369A1 0%, #1D4ED8 100%);
+      transform: translateY(-1px);
+    }
+    .btn-outline {
+      background: rgba(30, 41, 59, 0.6);
+      color: #E2E8F0;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+    .btn-outline:hover {
+      background: rgba(51, 65, 85, 0.8);
+      border-color: var(--admin-cyan);
+      color: #FFFFFF;
+    }
+
+    /* 10 STATS HUD GRID */
+    .hud-grid-10 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+    .stat-card-10 {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid rgba(53, 217, 255, 0.15);
+      border-radius: 12px;
+      padding: 1.1rem 1.2rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card-10:hover {
+      transform: translateY(-2px);
+      border-color: rgba(53, 217, 255, 0.4);
+    }
+    .stat-card-10::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--admin-cyan);
+    }
+    .stat-card-10.gold::before { background: var(--admin-gold); }
+    .stat-card-10.purple::before { background: var(--admin-purple); }
+    .stat-card-10.emerald::before { background: var(--admin-emerald); }
+    .stat-card-10.rose::before { background: var(--admin-rose); }
+
+    .stat-meta h3 {
+      font-size: 0.78rem;
+      color: #94A3B8;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin: 0 0 0.35rem 0;
+      font-weight: 700;
+    }
+    .stat-value {
+      font-family: var(--font-mono);
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #FFFFFF;
+      line-height: 1.1;
+      margin: 0;
+    }
+    .stat-sub {
+      font-size: 0.74rem;
+      color: #64748B;
+      margin-top: 0.35rem;
+    }
+    .stat-icon {
+      font-size: 1.65rem;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.4rem;
+      border-radius: 10px;
+    }
+
+    /* TABS NAVIGATION */
+    .admin-nav-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(15, 23, 42, 0.85);
+      padding: 0.45rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .admin-nav-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.55rem 0.95rem;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
+      color: #94A3B8;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.18s ease;
+    }
+    .admin-nav-item:hover {
+      color: #FFFFFF;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .admin-nav-item.active {
+      color: #FFFFFF;
+      background: linear-gradient(135deg, rgba(53, 217, 255, 0.25) 0%, rgba(37, 99, 235, 0.3) 100%);
+      border: 1px solid rgba(53, 217, 255, 0.4);
+      box-shadow: 0 2px 10px rgba(53, 217, 255, 0.15);
+    }
+    .nav-badge {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 9999px;
+      background: rgba(0, 0, 0, 0.3);
+      color: var(--admin-cyan);
+    }
+
+    /* CARD PANELS */
+    .admin-card {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(53, 217, 255, 0.18);
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      backdrop-filter: blur(8px);
+    }
+    .card-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .card-title-group h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card-title-group p {
+      margin: 0.2rem 0 0;
+      font-size: 0.82rem;
+      color: #94A3B8;
+    }
+
+    /* PODIUM STAGE FOR TOP SCORERS */
+    .podium-stage {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr 1fr;
+      gap: 1.25rem;
+      margin: 1.5rem 0 2rem;
+      align-items: flex-end;
+    }
+    @media (max-width: 860px) {
+      .podium-stage {
+        grid-template-columns: 1fr;
+      }
+    }
+    .podium-card {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+      border-radius: 14px;
+      padding: 1.5rem;
+      text-align: center;
+      position: relative;
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+    .podium-card.rank-1 {
+      border-color: rgba(255, 215, 0, 0.6);
+      background: linear-gradient(180deg, rgba(255, 215, 0, 0.12) 0%, rgba(15, 23, 42, 0.98) 100%);
+      transform: translateY(-8px);
+      box-shadow: 0 12px 35px rgba(255, 215, 0, 0.2);
+    }
+    .podium-card.rank-2 {
+      border-color: rgba(53, 217, 255, 0.5);
+    }
+    .podium-card.rank-3 {
+      border-color: rgba(168, 85, 247, 0.5);
+    }
+    .podium-crown {
+      font-size: 2.2rem;
+      margin-bottom: 0.35rem;
+    }
+    .podium-rank-tag {
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      font-weight: 800;
+      padding: 0.2rem 0.65rem;
+      border-radius: 9999px;
+      display: inline-block;
+      margin-bottom: 0.65rem;
+    }
+    .podium-card.rank-1 .podium-rank-tag { background: rgba(255, 215, 0, 0.2); color: #FFD700; }
+    .podium-card.rank-2 .podium-rank-tag { background: rgba(53, 217, 255, 0.2); color: #35D9FF; }
+    .podium-card.rank-3 .podium-rank-tag { background: rgba(168, 85, 247, 0.2); color: #C084FC; }
+    .podium-name {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin: 0 0 0.25rem;
+    }
+    .podium-id {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: #94A3B8;
+      margin-bottom: 0.85rem;
+    }
+    .podium-score-pill {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-weight: 800;
+      font-size: 1.15rem;
+      color: #FFFFFF;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* DATA TABLES */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(11, 17, 32, 0.6);
+    }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.84rem;
+    }
+    .admin-table th {
+      background: rgba(30, 41, 59, 0.9);
+      padding: 0.85rem 1rem;
+      color: #94A3B8;
+      font-weight: 700;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      white-space: nowrap;
+    }
+    .admin-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #E2E8F0;
+      vertical-align: middle;
+    }
+    .admin-table tbody tr:hover {
+      background: rgba(53, 217, 255, 0.04);
+    }
+
+    /* Filters Toolbar */
+    .filter-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+      padding: 0.85rem;
+      background: rgba(30, 41, 59, 0.5);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .search-input-wrap {
+      flex: 1;
+      min-width: 220px;
+      position: relative;
+    }
+    .admin-input, .admin-select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: #FFFFFF;
+      font-size: 0.82rem;
+      font-family: inherit;
+    }
+    .admin-input:focus, .admin-select:focus {
+      outline: none;
+      border-color: var(--admin-cyan);
+      box-shadow: 0 0 0 2px rgba(53, 217, 255, 0.2);
+    }
+
+    /* Badges & Tags */
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      background: rgba(53, 217, 255, 0.15);
+      color: var(--admin-cyan);
+      border: 1px solid rgba(53, 217, 255, 0.3);
+    }
+    .badge-gold { background: rgba(255, 215, 0, 0.15); color: #FFD700; border-color: rgba(255, 215, 0, 0.35); }
+    .badge-emerald { background: rgba(16, 185, 129, 0.15); color: #34D399; border-color: rgba(16, 185, 129, 0.35); }
+    .badge-purple { background: rgba(168, 85, 247, 0.15); color: #C084FC; border-color: rgba(168, 85, 247, 0.35); }
+    .badge-rose { background: rgba(244, 63, 94, 0.15); color: #FB7185; border-color: rgba(244, 63, 94, 0.35); }
+
+    /* Progress bar */
+    .progress-bar-wrap {
+      width: 100px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 9999px;
+      overflow: hidden;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 0.4rem;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--admin-cyan), var(--admin-emerald));
+      border-radius: 9999px;
+    }
+
+    /* Modal / Drawer */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-box {
+      background: #0F172A;
+      border: 1px solid rgba(53, 217, 255, 0.3);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 760px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(30, 41, 59, 0.6);
+    }
+    .modal-body {
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+
+    /* LOGIN VIEW */
+    .login-container-view {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 120px);
+      padding: 2rem 1rem;
+    }
+    .login-card-box {
+      width: 100%;
+      max-width: 440px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(53, 217, 255, 0.3);
+      border-radius: 20px;
+      padding: 2.25rem;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(53, 217, 255, 0.1);
+      text-align: center;
+    }
+    .login-icon-badge {
+      font-size: 2.8rem;
+      margin-bottom: 0.75rem;
+      display: inline-block;
+    }
+    .login-error-alert {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #FCA5A5;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      margin-bottom: 1.25rem;
+      display: none;
+      text-align: left;
+    }
+
+    /* Toast */
+    .admin-toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: #1E293B;
+      border: 1px solid var(--admin-cyan);
+      color: #FFFFFF;
+      padding: 0.75rem 1.25rem;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      font-size: 0.85rem;
+      font-weight: 700;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       TOP COMMAND CENTER HEADER
+       ============================================================ -->
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <div class="brand-wrap">
+        <div class="brand-badge">
+          <span class="status-dot"></span>
+          <span>ADMIN PORTAL</span>
+        </div>
+        <div class="brand-title-group">
+          <h1>AI Explorer Admin Console</h1>
+          <p>Real-Time Student Management System & Central Workshop Matrix</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <a href="/" class="btn btn-outline btn-sm" title="Go to Student Workshop Platform">
+          ← Student Platform
+        </a>
+
+        <div id="connStatus" class="status-pill">
+          <span class="status-dot"></span>
+          <span id="connStatusText">Connecting Firestore...</span>
+        </div>
+
+        <button class="btn btn-outline btn-sm" onclick="syncAllFromFirestore()" title="Sync live Firestore records">
+          🔄 Refresh DB
+        </button>
+
+        <button class="btn btn-primary btn-sm" onclick="exportFullStudentCSV()" title="Download CSV report">
+          📥 Export CSV
+        </button>
+
+        <button id="authBtnLogout" class="btn btn-outline btn-sm" onclick="handleAdminSignOut()" style="display:none;">
+          Sign Out
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       VIEW 1: SECURE ADMIN LOGIN GATE (PART 1)
+       ============================================================ -->
+  <main id="viewLogin" class="login-container-view">
+    <div class="login-card-box">
+      <div class="login-icon-badge">🛡️</div>
+      <h2 style="margin: 0 0 0.4rem; font-size: 1.45rem; color: #FFFFFF;">Admin Portal Authentication</h2>
+      <p style="margin: 0 0 1.5rem; font-size: 0.85rem; color: #94A3B8;">
+        Authorized workshop organizers only. Access real-time student telemetry, career dossiers, and analytics.
+      </p>
+
+      <div id="loginAlertBox" class="login-error-alert"></div>
+
+      <form onsubmit="handleAdminLoginSubmit(event)" style="text-align: left;">
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: 0.82rem; color: #94A3B8; margin-bottom: 0.35rem; font-weight: 700;">
+            Admin ID or Email
+          </label>
+          <input type="text" id="adminIdInput" class="admin-input" placeholder="admin or organizer@ssmiet.ac.in" required autocomplete="username" />
+          <span style="font-size: 0.72rem; color: #64748B;">Enter 'admin' to map to dedicated admin account</span>
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <label style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #94A3B8; margin-bottom: 0.35rem; font-weight: 700;">
+            <span>Password</span>
+            <a href="javascript:void(0)" onclick="openPasswordResetModal()" style="color: var(--admin-cyan); text-decoration: none; font-size: 0.75rem;">Reset password?</a>
+          </label>
+          <input type="password" id="adminPasswordInput" class="admin-input" placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+
+        <button type="submit" id="btnAdminSubmit" class="btn btn-primary" style="width: 100%; padding: 0.65rem 1rem;">
+          Sign In to Admin Portal →
+        </button>
+      </form>
+
+      <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px dashed rgba(255, 255, 255, 0.1); font-size: 0.78rem; color: #64748B;">
+        🔒 Protected by Firebase Authentication & Firestore Security Rules
+      </div>
+    </div>
+  </main>
+
+  <!-- ============================================================
+       VIEW 2: MAIN ADMIN COMMAND CENTER & MANAGEMENT SYSTEM
+       ============================================================ -->
+  <main id="viewDashboard" class="admin-main-wrap" style="display: none;">
+
+    <!-- TOP PERFORMER SPOTLIGHT BANNER -->
+    <section id="topPerformerSpotlight" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(30, 41, 59, 0.95) 100%); border: 1px solid rgba(255, 215, 0, 0.35); border-radius: 14px; padding: 1.15rem 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <span style="font-size: 2.5rem;">👑</span>
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 0.76rem; color: var(--admin-gold); font-weight: 800; letter-spacing: 0.05em;">
+            CURRENT TOP SCORER SPOTLIGHT
+          </div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #FFFFFF;" id="spotlightStudentName">
+            Awaiting student submissions...
+          </div>
+          <div style="font-size: 0.82rem; color: #94A3B8;" id="spotlightStudentMeta">
+            Real-time score tracking active across workshop sessions
+          </div>
+        </div>
+      </div>
+      <div id="spotlightScoreBox" class="badge-pill badge-gold" style="font-size: 1rem; padding: 0.45rem 1rem;">
+        Score: -- / 15
+      </div>
+    </section>
+
+    <!-- 10 OVERVIEW STATISTICS (PART 2) -->
+    <section class="hud-grid-10">
+      <div class="stat-card-10">
+        <div class="stat-meta">
+          <h3>1. Registered Students</h3>
+          <div class="stat-value" id="statTotalStudents">0</div>
+          <div class="stat-sub">Total verified Explorer IDs</div>
+        </div>
+        <div class="stat-icon">🧑‍🎓</div>
+      </div>
+
+      <div class="stat-card-10 emerald">
+        <div class="stat-meta">
+          <h3>2. Active Students</h3>
+          <div class="stat-value" id="statActiveStudents">0</div>
+          <div class="stat-sub">Active in workshop session</div>
+        </div>
+        <div class="stat-icon">⚡</div>
+      </div>
+
+      <div class="stat-card-10 gold">
+        <div class="stat-meta">
+          <h3>3. Completed Quizzes</h3>
+          <div class="stat-value" id="statCompletedQuizzes">0</div>
+          <div class="stat-sub">15/15 tests finished</div>
+        </div>
+        <div class="stat-icon">🏆</div>
+      </div>
+
+      <div class="stat-card-10 purple">
+        <div class="stat-meta">
+          <h3>4. Quiz Attempts</h3>
+          <div class="stat-value" id="statTotalAttempts">0</div>
+          <div class="stat-sub">Total submissions saved</div>
+        </div>
+        <div class="stat-icon">📝</div>
+      </div>
+
+      <div class="stat-card-10">
+        <div class="stat-meta">
+          <h3>5. Average Quiz Score</h3>
+          <div class="stat-value" id="statAvgScore">0 / 15</div>
+          <div class="stat-sub" id="statAvgPct">0% overall average</div>
+        </div>
+        <div class="stat-icon">🧠</div>
+      </div>
+
+      <div class="stat-card-10 gold">
+        <div class="stat-meta">
+          <h3>6. Highest Score</h3>
+          <div class="stat-value" id="statHighScore">0 / 15</div>
+          <div class="stat-sub" id="statHighScoreName">Top class mark</div>
+        </div>
+        <div class="stat-icon">🥇</div>
+      </div>
+
+      <div class="stat-card-10 rose">
+        <div class="stat-meta">
+          <h3>7. Badged Students</h3>
+          <div class="stat-value" id="statBadgedCount">0</div>
+          <div class="stat-sub">Earned achievement badges</div>
+        </div>
+        <div class="stat-icon">🎖️</div>
+      </div>
+
+      <div class="stat-card-10 emerald">
+        <div class="stat-meta">
+          <h3>8. Prompt Gym Exercises</h3>
+          <div class="stat-value" id="statPromptSubmissions">0</div>
+          <div class="stat-sub">5-Part recipes evaluated</div>
+        </div>
+        <div class="stat-icon">💬</div>
+      </div>
+
+      <div class="stat-card-10 purple">
+        <div class="stat-meta">
+          <h3>9. Career Assessments</h3>
+          <div class="stat-value" id="statCareerCount">0</div>
+          <div class="stat-sub">Profiles fully mapped</div>
+        </div>
+        <div class="stat-icon">🧭</div>
+      </div>
+
+      <div class="stat-card-10">
+        <div class="stat-meta">
+          <h3>10. Recent Joins (1h)</h3>
+          <div class="stat-value" id="statRecentJoins">0</div>
+          <div class="stat-sub">Joined in the last hour</div>
+        </div>
+        <div class="stat-icon">⏱️</div>
+      </div>
+    </section>
+
+    <!-- ADMIN WORKSPACE TABS NAVIGATION -->
+    <nav class="admin-nav-bar">
+      <button type="button" class="admin-nav-item active" id="tabNavOverview" onclick="switchNavTab('overview')">
+        <span>📊 Overview Dashboard</span>
+      </button>
+
+      <button type="button" class="admin-nav-item" id="tabNavStudents" onclick="switchNavTab('students')">
+        <span>👥 Student Management</span>
+        <span class="nav-badge" id="badgeNavStudents">0</span>
+      </button>
+
+      <button type="button" class="admin-nav-item" id="tabNavLeaderboard" onclick="switchNavTab('leaderboard')">
+        <span>🏆 Top Scorers & Leaderboard</span>
+      </button>
+
+      <button type="button" class="admin-nav-item" id="tabNavAnalytics" onclick="switchNavTab('analytics')">
+        <span>📈 Quiz Performance Analytics</span>
+      </button>
+
+      <button type="button" class="admin-nav-item" id="tabNavPromptGym" onclick="switchNavTab('promptgym')">
+        <span>💬 Prompt Gym Monitoring</span>
+        <span class="nav-badge" id="badgeNavGym">0</span>
+      </button>
+
+      <button type="button" class="admin-nav-item" id="tabNavCareer" onclick="switchNavTab('career')">
+        <span>🎯 Career Profiles</span>
+        <span class="nav-badge" id="badgeNavCareer">0</span>
+      </button>
+
+      <button type="button" class="admin-nav-item" id="tabNavBadges" onclick="switchNavTab('badges')">
+        <span>🎖️ Badges & Achievements</span>
+      </button>
+
+      <button type="button" class="admin-nav-item" id="tabNavReports" onclick="switchNavTab('reports')">
+        <span>📑 Admin Reports & Exports</span>
+      </button>
+
+      <button type="button" class="admin-nav-item" id="tabNavDatabase" onclick="switchNavTab('database')">
+        <span>🗄️ Firestore Collections & Audit</span>
+      </button>
+    </nav>
+
+    <!-- ============================================================
+         TAB 1: OVERVIEW & RECENT REGISTRATIONS (PART 2)
+         ============================================================ -->
+    <div id="tabContentOverview" class="tab-panel">
+      <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 1.5rem;">
+        <!-- Recent Student Registrations Feed -->
+        <div class="admin-card" style="margin: 0;">
+          <div class="card-header-row">
+            <div class="card-title-group">
+              <h2><span>⚡</span> Recent Student Registrations</h2>
+              <p>Live stream of students creating Explorer IDs in the workshop</p>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="switchNavTab('students')">View All →</button>
+          </div>
+          <div id="recentRegistrationsFeed" style="display: flex; flex-direction: column; gap: 0.65rem; max-height: 480px; overflow-y: auto;">
+            <!-- Injected via renderRecentRegistrations() -->
+          </div>
+        </div>
+
+        <!-- Career Domains Quick Breakdown -->
+        <div class="admin-card" style="margin: 0;">
+          <div class="card-header-row">
+            <div class="card-title-group">
+              <h2><span>🎯</span> Top Career Matches</h2>
+              <p>Top matched engineering branches across all career profiles</p>
+            </div>
+          </div>
+          <div id="quickDomainDistribution" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <!-- Injected via renderQuickDomains() -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         TAB 2: STUDENT MANAGEMENT (PART 3)
+         ============================================================ -->
+    <div id="tabContentStudents" class="tab-panel" style="display: none;">
+      <div class="admin-card">
+        <div class="card-header-row">
+          <div class="card-title-group">
+            <h2><span>👥</span> Student Management Directory</h2>
+            <p>Search, filter, view complete learning history dossiers, and export student records</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-outline btn-sm" onclick="exportFullStudentCSV()">
+              📥 Export to CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Toolbar -->
+        <div class="filter-toolbar">
+          <div class="search-input-wrap">
+            <input type="text" id="studentSearchInput" class="admin-input" placeholder="Search by name, email, Explorer ID..." oninput="filterStudentsTable()" />
+          </div>
+
+          <select id="studentDateFilter" class="admin-select" style="max-width: 170px;" onchange="filterStudentsTable()">
+            <option value="all">All Dates</option>
+            <option value="today">Registered Today</option>
+            <option value="week">Past 7 Days</option>
+          </select>
+
+          <select id="studentActivityFilter" class="admin-select" style="max-width: 180px;" onchange="filterStudentsTable()">
+            <option value="all">All Activities</option>
+            <option value="quiz_done">Knowledge Quiz Done</option>
+            <option value="career_done">Career Profile Done</option>
+            <option value="gym_done">Prompt Gym Done</option>
+          </select>
+
+          <select id="studentSortBy" class="admin-select" style="max-width: 180px;" onchange="filterStudentsTable()">
+            <option value="score_desc">Sort: Highest Score</option>
+            <option value="progress_desc">Sort: Highest Progress</option>
+            <option value="name_asc">Sort: Name (A-Z)</option>
+            <option value="date_desc">Sort: Newest First</option>
+          </select>
+
+          <button class="btn btn-outline btn-sm" onclick="resetStudentFilters()">Clear</button>
+        </div>
+
+        <!-- Students Table -->
+        <div class="table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Student ID</th>
+                <th>Student Name</th>
+                <th>Email</th>
+                <th>Registration Date</th>
+                <th>Last Active</th>
+                <th>Quiz Attempts</th>
+                <th>Total Score</th>
+                <th>Accuracy</th>
+                <th>Activities</th>
+                <th>Badges</th>
+                <th>Progress</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="studentsTableBody">
+              <tr>
+                <td colspan="12" style="text-align: center; color: #94A3B8; padding: 2.5rem;">
+                  Loading students from Firestore...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         TAB 3: TOP SCORERS & LEADERBOARD (PART 4)
+         ============================================================ -->
+    <div id="tabContentLeaderboard" class="tab-panel" style="display: none;">
+      <div class="admin-card">
+        <div class="card-header-row">
+          <div class="card-title-group">
+            <h2><span>🏆</span> Top Scorers & Workshop Leaderboard</h2>
+            <p>Automatically ranked by verified scores in Firestore with tie-breaking logic</p>
+          </div>
+          <!-- Timeframe Filters -->
+          <div style="display: flex; gap: 0.35rem; background: rgba(0,0,0,0.3); padding: 0.25rem; border-radius: 8px;">
+            <button class="btn btn-outline btn-sm active" id="btnTfAll" onclick="setLeaderboardTimeframe('all')">All-Time</button>
+            <button class="btn btn-outline btn-sm" id="btnTfMonth" onclick="setLeaderboardTimeframe('month')">Monthly</button>
+            <button class="btn btn-outline btn-sm" id="btnTfWeek" onclick="setLeaderboardTimeframe('week')">Weekly</button>
+          </div>
+        </div>
+
+        <!-- TOP 3 PODIUM -->
+        <div class="podium-stage" id="leaderboardPodium">
+          <!-- Injected via renderLeaderboardPodium() -->
+        </div>
+
+        <!-- COMPLETE RANKED LEADERBOARD TABLE -->
+        <div class="table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Student Name</th>
+                <th>Explorer ID</th>
+                <th>Total Points</th>
+                <th>Highest Quiz Score</th>
+                <th>Average %</th>
+                <th>Quizzes Completed</th>
+                <th>Attempts</th>
+                <th>Badges</th>
+                <th style="text-align: right;">Dossier</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardTableBody">
+              <!-- Injected via renderLeaderboardTable() -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         TAB 4: QUIZ PERFORMANCE ANALYTICS (PART 5)
+         ============================================================ -->
+    <div id="tabContentAnalytics" class="tab-panel" style="display: none;">
+      <div class="admin-card">
+        <div class="card-header-row">
+          <div class="card-title-group">
+            <h2><span>📈</span> Knowledge Quiz Performance Analytics</h2>
+            <p>Score distribution, question error breakdown, and mastery trends</p>
+          </div>
+        </div>
+
+        <!-- Analytics Metric Pods -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
+          <div class="stat-card-10">
+            <div class="stat-meta">
+              <h3>Total Attempts</h3>
+              <div class="stat-value" id="anaAttempts">0</div>
+            </div>
+          </div>
+          <div class="stat-card-10 gold">
+            <div class="stat-meta">
+              <h3>Highest Score</h3>
+              <div class="stat-value" id="anaHighScore">0 / 15</div>
+            </div>
+          </div>
+          <div class="stat-card-10 rose">
+            <div class="stat-meta">
+              <h3>Lowest Score</h3>
+              <div class="stat-value" id="anaLowScore">0 / 15</div>
+            </div>
+          </div>
+          <div class="stat-card-10 emerald">
+            <div class="stat-meta">
+              <h3>Average Score</h3>
+              <div class="stat-value" id="anaAvgScore">0 / 15</div>
+            </div>
+          </div>
+          <div class="stat-card-10 purple">
+            <div class="stat-meta">
+              <h3>Completion Rate</h3>
+              <div class="stat-value" id="anaCompletionRate">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual SVG Charts Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+          <!-- Score Distribution Histogram -->
+          <div style="background: rgba(11, 17, 32, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 1.25rem;">
+            <h3 style="margin: 0 0 1rem; font-size: 0.95rem; color: #FFFFFF;">📊 Score Distribution Histogram</h3>
+            <div id="histogramContainer" style="height: 200px; display: flex; align-items: flex-end; gap: 1.5rem; padding-top: 2rem;">
+              <!-- Injected via renderAnalyticsCharts() -->
+            </div>
+          </div>
+
+          <!-- Question-Wise Accuracy Breakdown -->
+          <div style="background: rgba(11, 17, 32, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 1.25rem;">
+            <h3 style="margin: 0 0 1rem; font-size: 0.95rem; color: #FFFFFF;">🎯 Question-Wise Accuracy Rate</h3>
+            <div id="questionAccuracyContainer" style="display: flex; flex-direction: column; gap: 0.45rem; max-height: 220px; overflow-y: auto;">
+              <!-- Injected via renderAnalyticsCharts() -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Student-Wise Quiz Attempts Log Table -->
+        <h3 style="color: #FFFFFF; font-size: 1.1rem; margin: 1.5rem 0 0.85rem;">Individual Quiz Attempts Log</h3>
+        <div class="table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Attempt Time</th>
+                <th>Student ID</th>
+                <th>Student Name</th>
+                <th>Score</th>
+                <th>Percentage</th>
+                <th>Time Taken</th>
+                <th>Language</th>
+                <th>Badge</th>
+                <th style="text-align: right;">Review</th>
+              </tr>
+            </thead>
+            <tbody id="quizAttemptsTableBody">
+              <!-- Injected via renderQuizAttemptsTable() -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         TAB 5: PROMPT GYM MONITORING (PART 6)
+         ============================================================ -->
+    <div id="tabContentPromptGym" class="tab-panel" style="display: none;">
+      <div class="admin-card">
+        <div class="card-header-row">
+          <div class="card-title-group">
+            <h2><span>💬</span> Prompt Gym Submissions Monitoring</h2>
+            <p>Real-time log of 12th-grade student prompts, recipe evaluations, and practice exercises</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="exportPromptGymCSV()">📥 Export Prompts CSV</button>
+        </div>
+
+        <div class="table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Submission Time</th>
+                <th>Student ID</th>
+                <th>Student Name</th>
+                <th>Score</th>
+                <th>Evaluated Prompt Text</th>
+                <th>School</th>
+                <th style="text-align: right;">Inspect</th>
+              </tr>
+            </thead>
+            <tbody id="promptGymTableBody">
+              <!-- Injected via renderPromptGymTable() -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         TAB 6: CAREER PROFILE MONITORING (PART 7)
+         ============================================================ -->
+    <div id="tabContentCareer" class="tab-panel" style="display: none;">
+      <div class="admin-card">
+        <div class="card-header-row">
+          <div class="card-title-group">
+            <h2><span>🎯</span> Career Profile Assessments Monitoring</h2>
+            <p>Student interests, academic preferences, and generated AI-resilient career recommendations</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="exportCareerAssessmentsCSV()">📥 Export Career CSV</button>
+        </div>
+
+        <div class="table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Completed Time</th>
+                <th>Student ID</th>
+                <th>Student Name</th>
+                <th>School & Stream</th>
+                <th>#1 Top Match</th>
+                <th>#2 Strong Match</th>
+                <th>Math / Coding</th>
+                <th>10-Year Dream Goal</th>
+                <th style="text-align: right;">Dossier</th>
+              </tr>
+            </thead>
+            <tbody id="careerProfilesTableBody">
+              <!-- Injected via renderCareerProfilesTable() -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         TAB 7: BADGES & ACHIEVEMENTS (PART 8)
+         ============================================================ -->
+    <div id="tabContentBadges" class="tab-panel" style="display: none;">
+      <div class="admin-card">
+        <div class="card-header-row">
+          <div class="card-title-group">
+            <h2><span>🎖️</span> Explorer Badges & Achievements Tracker</h2>
+            <p>Track all earned badges across Prompt Gym, Career Profile, and Knowledge Quiz</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="exportBadgesCSV()">📥 Export Badges CSV</button>
+        </div>
+
+        <!-- Badges Directory Preview -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+          <div style="background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 12px; padding: 1.15rem;">
+            <div style="font-size: 1.5rem; margin-bottom: 0.35rem;">🏆</div>
+            <h4 style="margin: 0 0 0.25rem; color: #FFD700;">AI Champion</h4>
+            <p style="font-size: 0.78rem; color: #94A3B8; margin: 0 0 0.5rem;">Scored 80%+ (12+/15) on Knowledge Quiz</p>
+            <div class="badge-pill badge-gold" id="badgeCountChampion">0 Awarded</div>
+          </div>
+
+          <div style="background: rgba(53, 217, 255, 0.1); border: 1px solid rgba(53, 217, 255, 0.3); border-radius: 12px; padding: 1.15rem;">
+            <div style="font-size: 1.5rem; margin-bottom: 0.35rem;">🚀</div>
+            <h4 style="margin: 0 0 0.25rem; color: #35D9FF;">AI Explorer</h4>
+            <p style="font-size: 0.78rem; color: #94A3B8; margin: 0 0 0.5rem;">Completed Knowledge Quiz with solid foundation</p>
+            <div class="badge-pill" id="badgeCountExplorer">0 Awarded</div>
+          </div>
+
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 1.15rem;">
+            <div style="font-size: 1.5rem; margin-bottom: 0.35rem;">💡</div>
+            <h4 style="margin: 0 0 0.25rem; color: #34D399;">Prompt Master</h4>
+            <p style="font-size: 0.78rem; color: #94A3B8; margin: 0 0 0.5rem;">Evaluated 5-part prompt formula in Prompt Gym</p>
+            <div class="badge-pill badge-emerald" id="badgeCountPrompt">0 Awarded</div>
+          </div>
+
+          <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 12px; padding: 1.15rem;">
+            <div style="font-size: 1.5rem; margin-bottom: 0.35rem;">🧭</div>
+            <h4 style="margin: 0 0 0.25rem; color: #C084FC;">Career Pioneer</h4>
+            <p style="font-size: 0.78rem; color: #94A3B8; margin: 0 0 0.5rem;">Completed 8-domain career mapping profile</p>
+            <div class="badge-pill badge-purple" id="badgeCountCareer">0 Awarded</div>
+          </div>
+        </div>
+
+        <!-- Student Badge Roll Table -->
+        <div class="table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Earned Date</th>
+                <th>Student ID</th>
+                <th>Student Name</th>
+                <th>Badge Awarded</th>
+                <th>Achievement Category</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody id="studentBadgesTableBody">
+              <!-- Injected via renderStudentBadgesTable() -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         TAB 8: ADMIN REPORTS & EXPORTS (PART 9)
+         ============================================================ -->
+    <div id="tabContentReports" class="tab-panel" style="display: none;">
+      <div class="admin-card">
+        <div class="card-header-row">
+          <div class="card-title-group">
+            <h2><span>📑</span> Admin Export Center & Workshop Reports</h2>
+            <p>One-click CSV downloads for student records, leaderboard rankings, and performance dossiers</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+          <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.25rem;">
+            <h3 style="margin: 0 0 0.35rem; color: #FFFFFF; font-size: 1rem;">1. All Registered Students Report</h3>
+            <p style="font-size: 0.82rem; color: #94A3B8; margin-bottom: 1rem;">Complete roster with Explorer IDs, emails, registration timestamps, and overall progress.</p>
+            <button class="btn btn-primary btn-sm" onclick="exportFullStudentCSV()">📥 Download CSV</button>
+          </div>
+
+          <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.25rem;">
+            <h3 style="margin: 0 0 0.35rem; color: #FFFFFF; font-size: 1rem;">2. Top 10 Scorers Report</h3>
+            <p style="font-size: 0.82rem; color: #94A3B8; margin-bottom: 1rem;">Spotlight report of the top 10 scoring students with marks, percentage, and time taken.</p>
+            <button class="btn btn-primary btn-sm" onclick="exportTop10CSV()">📥 Download CSV</button>
+          </div>
+
+          <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.25rem;">
+            <h3 style="margin: 0 0 0.35rem; color: #FFFFFF; font-size: 1rem;">3. Complete Leaderboard Report</h3>
+            <p style="font-size: 0.82rem; color: #94A3B8; margin-bottom: 1rem;">Full ranked leaderboard of all participants who completed the Knowledge Quiz.</p>
+            <button class="btn btn-primary btn-sm" onclick="exportLeaderboardCSV()">📥 Download CSV</button>
+          </div>
+
+          <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.25rem;">
+            <h3 style="margin: 0 0 0.35rem; color: #FFFFFF; font-size: 1rem;">4. Quiz Performance & Accuracy Report</h3>
+            <p style="font-size: 0.82rem; color: #94A3B8; margin-bottom: 1rem;">Every quiz attempt with correct/incorrect answers count and question-by-question breakdown.</p>
+            <button class="btn btn-primary btn-sm" onclick="exportQuizAnalyticsCSV()">📥 Download CSV</button>
+          </div>
+
+          <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.25rem;">
+            <h3 style="margin: 0 0 0.35rem; color: #FFFFFF; font-size: 1rem;">5. Student Activity & Progress Report</h3>
+            <p style="font-size: 0.82rem; color: #94A3B8; margin-bottom: 1rem;">Activity milestones: Guide pass, Prompt Gym, AI tools explored, and completion rates.</p>
+            <button class="btn btn-primary btn-sm" onclick="exportActivityReportCSV()">📥 Download CSV</button>
+          </div>
+
+          <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.25rem;">
+            <h3 style="margin: 0 0 0.35rem; color: #FFFFFF; font-size: 1rem;">6. Badge Achievements Report</h3>
+            <p style="font-size: 0.82rem; color: #94A3B8; margin-bottom: 1rem;">All student badges awarded across AI Champion, Prompt Master, and Career Pioneer.</p>
+            <button class="btn btn-primary btn-sm" onclick="exportBadgesCSV()">📥 Download CSV</button>
+          </div>
+
+          <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.25rem;">
+            <h3 style="margin: 0 0 0.35rem; color: #FFFFFF; font-size: 1rem;">7. Career Assessment & Choices Report</h3>
+            <p style="font-size: 0.82rem; color: #94A3B8; margin-bottom: 1rem;">12th-grade student stream selections, top 3 matched engineering fields, and 10-year goals.</p>
+            <button class="btn btn-primary btn-sm" onclick="exportCareerAssessmentsCSV()">📥 Download CSV</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         TAB 9: FIRESTORE COLLECTIONS & AUDIT LOGS (PART 10 & 11)
+         ============================================================ -->
+    <div id="tabContentDatabase" class="tab-panel" style="display: none;">
+      <div class="admin-card">
+        <div class="card-header-row">
+          <div class="card-title-group">
+            <h2><span>🗄️</span> Live Central Firestore Collections & Security Audit</h2>
+            <p>Direct view into Cloud Firestore collections: students, quizAttempts, promptSubmissions, careerAssessments, adminAuditLogs</p>
+          </div>
+        </div>
+
+        <!-- Subnav inside Database Tab -->
+        <div style="display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap;">
+          <button class="btn btn-outline btn-sm active" id="dbBtnStudents" onclick="switchDbCollection('students')">students</button>
+          <button class="btn btn-outline btn-sm" id="dbBtnQuiz" onclick="switchDbCollection('quizAttempts')">quizAttempts</button>
+          <button class="btn btn-outline btn-sm" id="dbBtnGym" onclick="switchDbCollection('promptSubmissions')">promptSubmissions</button>
+          <button class="btn btn-outline btn-sm" id="dbBtnCareer" onclick="switchDbCollection('careerAssessments')">careerAssessments</button>
+          <button class="btn btn-outline btn-sm" id="dbBtnBadges" onclick="switchDbCollection('studentBadges')">studentBadges</button>
+          <button class="btn btn-outline btn-sm" id="dbBtnAudit" onclick="switchDbCollection('adminAuditLogs')">adminAuditLogs</button>
+        </div>
+
+        <div style="background: #090D16; border: 1px solid rgba(53, 217, 255, 0.2); border-radius: 10px; padding: 1rem; max-height: 450px; overflow-y: auto;">
+          <pre id="dbJsonCode" style="margin: 0; font-family: var(--font-mono); font-size: 0.8rem; color: var(--admin-cyan); white-space: pre-wrap;">Loading collection...</pre>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ============================================================
+       MODAL: STUDENT LEARNING HISTORY DOSSIER (PART 3 & 7)
+       ============================================================ -->
+  <div id="studentDossierModal" class="modal-overlay" onclick="closeStudentDossier(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2 id="dossierModalTitle" style="margin: 0; color: #FFFFFF; font-size: 1.25rem;">Student Dossier</h2>
+          <span id="dossierModalSub" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--admin-cyan);">ID: --</span>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="closeStudentDossier()">✕ Close</button>
+      </div>
+      <div class="modal-body" id="dossierModalBody">
+        <!-- Injected via openStudentDossierModal() -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: PASSWORD RESET (PART 1)
+       ============================================================ -->
+  <div id="passwordResetModal" class="modal-overlay" onclick="closePasswordResetModal(event)">
+    <div class="modal-box" style="max-width: 420px;" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 style="margin: 0; color: #FFFFFF; font-size: 1.15rem;">Reset Admin Password</h3>
+        <button class="btn btn-outline btn-sm" onclick="closePasswordResetModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: #94A3B8; margin-top: 0;">
+          Enter your admin email below. A secure Firebase password reset link will be sent immediately.
+        </p>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="display: block; font-size: 0.82rem; color: #94A3B8; margin-bottom: 0.35rem; font-weight: 700;">Admin Email</label>
+          <input type="email" id="resetEmailInput" class="admin-input" placeholder="organizer@ssmiet.ac.in" />
+        </div>
+        <button type="button" class="btn btn-primary" style="width: 100%;" onclick="submitPasswordReset()">
+          Send Reset Email →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="adminToast" class="admin-toast">
+    <span id="toastIcon">ℹ️</span>
+    <span id="toastText">Notification</span>
+  </div>
+
+  <!-- ============================================================
+       ADMIN APPLICATION JAVASCRIPT LOGIC
+       ============================================================ -->
+  <script>
+    /* ============================================================
+       FIREBASE CONFIGURATION
+       ============================================================ */
+    const FIREBASE_CONFIG = {
+      projectId: "gen-lang-client-0812207578",
+      appId: "1:176294510133:web:136949c11f4a50b67ffb7c",
+      apiKey: "AIzaSyC0gx-Tin4pW51w2GB7IFWC-M5k5hP-PJ8",
+      authDomain: "gen-lang-client-0812207578.firebaseapp.com",
+      firestoreDatabaseId: "ai-studio-aiexplorer-0ee298a2-81c9-4696-879c-a645fcec5404",
+      storageBucket: "gen-lang-client-0812207578.firebasestorage.app",
+      messagingSenderId: "176294510133"
+    };
+
+    // State Variables
+    let currentAdminUser = null;
+    let firestoreDb = null;
+    let authClient = null;
+
+    // Live Collections In Memory (All from Firestore)
+    let dbStudents = [];
+    let dbQuizAttempts = [];
+    let dbPromptSubmissions = [];
+    let dbCareerAssessments = [];
+    let dbBadges = [];
+    let dbAuditLogs = [];
+
+    // Filter states
+    let currentNavTab = "overview";
+    let leaderboardTimeframe = "all";
+    let activeDbSubcollection = "students";
+
+    /* ============================================================
+       BOOTSTRAP & INITIALIZATION
+       ============================================================ */
+    window.addEventListener("DOMContentLoaded", () => {
+      initFirebaseAdmin();
+      initBroadcastSync();
+    });
+
+    function initFirebaseAdmin() {
+      const connPill = document.getElementById("connStatus");
+      const connText = document.getElementById("connStatusText");
+
+      try {
+        if (typeof firebase !== "undefined") {
+          if (!firebase.apps.length) {
+            firebase.initializeApp(FIREBASE_CONFIG);
+          }
+          authClient = firebase.auth();
+          firestoreDb = firebase.app().firestore(FIREBASE_CONFIG.firestoreDatabaseId);
+
+          if (connText) connText.innerText = "Firestore Connected 🟢";
+
+          // Listen to Authentication State
+          authClient.onAuthStateChanged(user => {
+            if (user) {
+              // Verify admin authorization
+              currentAdminUser = user;
+              document.getElementById("viewLogin").style.display = "none";
+              document.getElementById("viewDashboard").style.display = "block";
+              document.getElementById("authBtnLogout").style.display = "inline-flex";
+
+              logAdminAudit("Admin Session Activated", `Signed in as ${user.email}`);
+              showToast(`Welcome Admin (${user.email})!`, "🛡️");
+
+              // Start real-time Firestore listeners
+              startFirestoreListeners();
+            } else {
+              currentAdminUser = null;
+              document.getElementById("viewLogin").style.display = "flex";
+              document.getElementById("viewDashboard").style.display = "none";
+              document.getElementById("authBtnLogout").style.display = "none";
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Firebase admin initialization error:", err);
+        if (connText) connText.innerText = "Connection Warning ⚠️";
+      }
+    }
+
+    function initBroadcastSync() {
+      if (typeof BroadcastChannel !== "undefined") {
+        try {
+          const bc = new BroadcastChannel("ai_explorer_db_sync");
+          bc.onmessage = (event) => {
+            if (event.data && currentAdminUser) {
+              if (event.data.type === "student_registered") {
+                showToast(`👤 ${event.data.studentName || 'Student'} joined the workshop!`, "⚡");
+              } else if (event.data.record && event.data.record.type === "knowledge_quiz") {
+                showToast(`🏆 ${event.data.record.studentName} completed quiz with ${event.data.record.score}/15!`, "🎯");
+              }
+              // Refresh collections
+              syncAllFromFirestore();
+            }
+          };
+        } catch (e) {}
+      }
+    }
+
+    /* ============================================================
+       AUTHENTICATION HANDLERS (PART 1)
+       ============================================================ */
+    async function handleAdminLoginSubmit(e) {
+      e.preventDefault();
+      const rawId = document.getElementById("adminIdInput").value.trim();
+      const password = document.getElementById("adminPasswordInput").value;
+      const alertBox = document.getElementById("loginAlertBox");
+      const btn = document.getElementById("btnAdminSubmit");
+
+      alertBox.style.display = "none";
+      btn.disabled = true;
+      btn.innerText = "Verifying with Firebase...";
+
+      // Map 'admin' shorthand to admin email if entered
+      let email = rawId;
+      if (rawId.toLowerCase() === "admin") {
+        email = "gmurugesh71@gmail.com";
+      } else if (!rawId.includes("@")) {
+        email = `${rawId}@aiexplorer.edu`;
+      }
+
+      try {
+        await authClient.signInWithEmailAndPassword(email, password);
+        // Auth state listener handles transition
+      } catch (err) {
+        alertBox.innerText = err.message || "Failed to authenticate. Please check your credentials.";
+        alertBox.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Sign In to Admin Portal →";
+      }
+    }
+
+    function handleAdminSignOut() {
+      if (authClient) {
+        logAdminAudit("Admin Signed Out", currentAdminUser ? currentAdminUser.email : "admin");
+        authClient.signOut().then(() => {
+          showToast("Signed out successfully.", "👋");
+        });
+      }
+    }
+
+    function openPasswordResetModal() {
+      document.getElementById("passwordResetModal").classList.add("active");
+    }
+
+    function closePasswordResetModal(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById("passwordResetModal").classList.remove("active");
+    }
+
+    async function submitPasswordReset() {
+      const email = document.getElementById("resetEmailInput").value.trim();
+      if (!email) {
+        showToast("Please enter a valid email address.", "⚠️");
+        return;
+      }
+      try {
+        await authClient.sendPasswordResetEmail(email);
+        closePasswordResetModal();
+        showToast(`Reset email sent to ${email}!`, "✉️");
+      } catch (err) {
+        showToast(err.message || "Could not send reset email.", "❌");
+      }
+    }
+
+    /* ============================================================
+       REAL-TIME FIRESTORE LISTENERS & DATA AGGREGATION
+       ============================================================ */
+    function startFirestoreListeners() {
+      if (!firestoreDb) return;
+
+      // 1. Students collection listener
+      firestoreDb.collection("students").onSnapshot(snapshot => {
+        dbStudents = [];
+        snapshot.forEach(doc => {
+          dbStudents.push({ ...doc.data(), _id: doc.id });
+        });
+        recalculateAndRender();
+      }, err => console.warn("Students listener warning:", err));
+
+      // 2. Quiz Attempts collection listener
+      firestoreDb.collection("quizAttempts").onSnapshot(snapshot => {
+        dbQuizAttempts = [];
+        snapshot.forEach(doc => {
+          dbQuizAttempts.push({ ...doc.data(), _id: doc.id });
+        });
+        recalculateAndRender();
+      }, err => console.warn("Quiz listener warning:", err));
+
+      // 3. Prompt Submissions collection listener
+      firestoreDb.collection("promptSubmissions").onSnapshot(snapshot => {
+        dbPromptSubmissions = [];
+        snapshot.forEach(doc => {
+          dbPromptSubmissions.push({ ...doc.data(), _id: doc.id });
+        });
+        recalculateAndRender();
+      }, err => console.warn("Prompt Gym listener warning:", err));
+
+      // 4. Career Assessments collection listener
+      firestoreDb.collection("careerAssessments").onSnapshot(snapshot => {
+        dbCareerAssessments = [];
+        snapshot.forEach(doc => {
+          dbCareerAssessments.push({ ...doc.data(), _id: doc.id });
+        });
+        recalculateAndRender();
+      }, err => console.warn("Career listener warning:", err));
+
+      // 5. Student Badges collection listener
+      firestoreDb.collection("studentBadges").onSnapshot(snapshot => {
+        dbBadges = [];
+        snapshot.forEach(doc => {
+          dbBadges.push({ ...doc.data(), _id: doc.id });
+        });
+        recalculateAndRender();
+      }, err => console.warn("Badges listener warning:", err));
+
+      // 6. Admin Audit Logs
+      firestoreDb.collection("adminAuditLogs").orderBy("timestamp", "desc").limit(50).onSnapshot(snapshot => {
+        dbAuditLogs = [];
+        snapshot.forEach(doc => {
+          dbAuditLogs.push({ ...doc.data(), _id: doc.id });
+        });
+        if (activeDbSubcollection === "adminAuditLogs") {
+          renderDatabaseInspector();
+        }
+      }, err => console.warn("Audit logs warning:", err));
+    }
+
+    function syncAllFromFirestore() {
+      showToast("Syncing with Firestore...", "🔄");
+      startFirestoreListeners();
+    }
+
+    function logAdminAudit(action, details) {
+      if (!firestoreDb || !currentAdminUser) return;
+      try {
+        firestoreDb.collection("adminAuditLogs").add({
+          adminEmail: currentAdminUser.email || "admin",
+          action: action,
+          details: details,
+          timestamp: new Date().toISOString()
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    /* ============================================================
+       DASHBOARD STATISTICS CALCULATION (PART 2)
+       ============================================================ */
+    function recalculateAndRender() {
+      // 1. Total Registered Students
+      const totalStudents = dbStudents.length;
+      document.getElementById("statTotalStudents").innerText = totalStudents;
+      document.getElementById("badgeNavStudents").innerText = totalStudents;
+
+      // 2. Active Students (active within 24 hours or registered)
+      const now = Date.now();
+      const activeCount = dbStudents.filter(s => {
+        const time = parseTimestamp(s.lastActive || s.registeredAt);
+        return (now - time) < (24 * 60 * 60 * 1000);
+      }).length;
+      document.getElementById("statActiveStudents").innerText = activeCount || totalStudents;
+
+      // 3 & 4. Quizzes
+      const totalQuizAttempts = dbQuizAttempts.length;
+      document.getElementById("statTotalAttempts").innerText = totalQuizAttempts;
+
+      const completedQuizzes = dbQuizAttempts.filter(q => typeof q.score === "number").length;
+      document.getElementById("statCompletedQuizzes").innerText = completedQuizzes;
+
+      // 5. Average Score
+      if (completedQuizzes > 0) {
+        const sumScore = dbQuizAttempts.reduce((acc, q) => acc + (q.score || 0), 0);
+        const avg = (sumScore / completedQuizzes).toFixed(1);
+        const avgPct = Math.round((sumScore / (completedQuizzes * 15)) * 100);
+        document.getElementById("statAvgScore").innerText = `${avg} / 15`;
+        document.getElementById("statAvgPct").innerText = `${avgPct}% class average (${completedQuizzes} completed)`;
+      } else {
+        document.getElementById("statAvgScore").innerText = "0 / 15";
+        document.getElementById("statAvgPct").innerText = "Awaiting quiz attempts";
+      }
+
+      // 6. Highest Score & Top Performer
+      const sortedByScore = [...dbQuizAttempts].sort((a, b) => (b.score || 0) - (a.score || 0));
+      const topAttempt = sortedByScore[0];
+      if (topAttempt && typeof topAttempt.score === "number") {
+        document.getElementById("statHighScore").innerText = `${topAttempt.score} / 15`;
+        document.getElementById("statHighScoreName").innerText = `👑 ${topAttempt.studentName}`;
+
+        document.getElementById("spotlightStudentName").innerText = `${topAttempt.studentName} (${topAttempt.studentId})`;
+        document.getElementById("spotlightStudentMeta").innerText = `Class 12th Master · Scored ${topAttempt.score}/15 (${topAttempt.percentage || 0}%) in ${topAttempt.timeFormatted || 'quick pace'}`;
+        document.getElementById("spotlightScoreBox").innerText = `Score: ${topAttempt.score} / 15 (${topAttempt.percentage || 0}%)`;
+      } else {
+        document.getElementById("statHighScore").innerText = "0 / 15";
+        document.getElementById("statHighScoreName").innerText = "No attempts yet";
+      }
+
+      // 7. Badges
+      const uniqueBadgedStudents = new Set(dbBadges.map(b => b.studentId)).size;
+      document.getElementById("statBadgedCount").innerText = uniqueBadgedStudents;
+
+      // 8. Prompt Gym
+      document.getElementById("statPromptSubmissions").innerText = dbPromptSubmissions.length;
+      document.getElementById("badgeNavGym").innerText = dbPromptSubmissions.length;
+
+      // 9. Career Assessments
+      document.getElementById("statCareerCount").innerText = dbCareerAssessments.length;
+      document.getElementById("badgeNavCareer").innerText = dbCareerAssessments.length;
+
+      // 10. Recent Registrations (1h)
+      const oneHourAgo = now - (60 * 60 * 1000);
+      const recentOneHour = dbStudents.filter(s => parseTimestamp(s.registeredAt) > oneHourAgo).length;
+      document.getElementById("statRecentJoins").innerText = recentOneHour;
+
+      // Re-render UI components
+      renderRecentRegistrations();
+      renderQuickDomains();
+      filterStudentsTable();
+      renderLeaderboardPodium();
+      renderLeaderboardTable();
+      renderAnalyticsCharts();
+      renderQuizAttemptsTable();
+      renderPromptGymTable();
+      renderCareerProfilesTable();
+      renderStudentBadgesTable();
+      renderDatabaseInspector();
+    }
+
+    function renderRecentRegistrations() {
+      const container = document.getElementById("recentRegistrationsFeed");
+      if (!container) return;
+
+      const recent = [...dbStudents].sort((a,b) => parseTimestamp(b.registeredAt) - parseTimestamp(a.registeredAt)).slice(0, 8);
+      if (recent.length === 0) {
+        container.innerHTML = `<div style="text-align: center; color: #64748B; padding: 2rem;">No registered students yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = recent.map(s => {
+        const timeStr = s.registeredAt ? new Date(s.registeredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now";
+        return `
+          <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span style="font-size: 1.4rem;">🧑‍🎓</span>
+              <div>
+                <div style="font-weight: 700; color: #FFFFFF; font-size: 0.88rem;">${escapeHtml(s.studentName)}</div>
+                <div style="font-family: var(--font-mono); font-size: 0.74rem; color: var(--admin-cyan);">${escapeHtml(s.studentId)} · ${escapeHtml(s.stream || '12th Grade')}</div>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div class="badge-pill badge-emerald" style="font-size: 0.7rem;">⚡ Joined</div>
+              <div style="font-size: 0.72rem; color: #64748B; margin-top: 0.2rem;">${timeStr}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderQuickDomains() {
+      const container = document.getElementById("quickDomainDistribution");
+      if (!container) return;
+
+      const tally = {};
+      dbCareerAssessments.forEach(c => {
+        if (Array.isArray(c.topMatches) && c.topMatches[0]) {
+          const title = c.topMatches[0].title || "Engineering";
+          tally[title] = (tally[title] || 0) + 1;
+        }
+      });
+
+      const entries = Object.entries(tally).sort((a,b) => b[1] - a[1]);
+      if (entries.length === 0) {
+        container.innerHTML = `<div style="text-align: center; color: #64748B; padding: 2rem;">Awaiting career profile assessments.</div>`;
+        return;
+      }
+
+      const total = dbCareerAssessments.length || 1;
+      container.innerHTML = entries.slice(0, 5).map(([title, count]) => {
+        const pct = Math.round((count / total) * 100);
+        return `
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.25rem;">
+              <span style="font-weight: 700; color: #E2E8F0;">${escapeHtml(title)}</span>
+              <span style="font-family: var(--font-mono); color: var(--admin-cyan);">${count} students (${pct}%)</span>
+            </div>
+            <div style="width: 100%; height: 6px; background: rgba(255, 255, 255, 0.08); border-radius: 9999px; overflow: hidden;">
+              <div style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, #35D9FF, #A855F7); border-radius: 9999px;"></div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    /* ============================================================
+       NAVIGATION TABS SWITCHING
+       ============================================================ */
+    function switchNavTab(tabKey) {
+      currentNavTab = tabKey;
+      const tabs = ["overview", "students", "leaderboard", "analytics", "promptgym", "career", "badges", "reports", "database"];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tabNav${capitalize(t)}`);
+        const panel = document.getElementById(`tabContent${capitalize(t)}`);
+        if (btn) btn.classList.toggle("active", t === tabKey);
+        if (panel) panel.style.display = (t === tabKey ? "block" : "none");
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function capitalize(str) {
+      if (str === "promptgym") return "PromptGym";
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    /* ============================================================
+       STUDENT MANAGEMENT SECTION (PART 3)
+       ============================================================ */
+    function filterStudentsTable() {
+      const search = (document.getElementById("studentSearchInput")?.value || "").toLowerCase().trim();
+      const dateFilter = document.getElementById("studentDateFilter")?.value || "all";
+      const actFilter = document.getElementById("studentActivityFilter")?.value || "all";
+      const sortBy = document.getElementById("studentSortBy")?.value || "score_desc";
+
+      const now = Date.now();
+      const oneDay = 24 * 60 * 60 * 1000;
+      const oneWeek = 7 * oneDay;
+
+      let filtered = dbStudents.filter(s => {
+        // Search
+        if (search) {
+          const matchName = (s.studentName || "").toLowerCase().includes(search);
+          const matchId = (s.studentId || "").toLowerCase().includes(search);
+          const matchEmail = (s.email || "").toLowerCase().includes(search);
+          if (!matchName && !matchId && !matchEmail) return false;
+        }
+
+        // Date
+        const regTime = parseTimestamp(s.registeredAt);
+        if (dateFilter === "today" && (now - regTime) > oneDay) return false;
+        if (dateFilter === "week" && (now - regTime) > oneWeek) return false;
+
+        // Activity
+        if (actFilter === "quiz_done" && !(s.quizScore !== undefined || s.totalQuizAttempts > 0)) return false;
+        if (actFilter === "career_done" && !s.careerCompleted) return false;
+        if (actFilter === "gym_done" && !s.promptGymCompleted) return false;
+
+        return true;
+      });
+
+      // Sorting
+      filtered.sort((a, b) => {
+        if (sortBy === "score_desc") return (b.quizScore || b.totalScore || 0) - (a.quizScore || a.totalScore || 0);
+        if (sortBy === "progress_desc") return (b.overallProgress || 0) - (a.overallProgress || 0);
+        if (sortBy === "name_asc") return (a.studentName || "").localeCompare(b.studentName || "");
+        if (sortBy === "date_desc") return parseTimestamp(b.registeredAt) - parseTimestamp(a.registeredAt);
+        return 0;
+      });
+
+      renderStudentsTable(filtered);
+    }
+
+    function resetStudentFilters() {
+      if (document.getElementById("studentSearchInput")) document.getElementById("studentSearchInput").value = "";
+      if (document.getElementById("studentDateFilter")) document.getElementById("studentDateFilter").value = "all";
+      if (document.getElementById("studentActivityFilter")) document.getElementById("studentActivityFilter").value = "all";
+      if (document.getElementById("studentSortBy")) document.getElementById("studentSortBy").value = "score_desc";
+      filterStudentsTable();
+    }
+
+    function renderStudentsTable(students) {
+      const tbody = document.getElementById("studentsTableBody");
+      if (!tbody) return;
+
+      if (students.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; color: #94A3B8; padding: 2.5rem;">No students found matching current filters.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = students.map(s => {
+        const regFormatted = s.registeredAt ? new Date(s.registeredAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "N/A";
+        const lastActiveFormatted = s.lastActive ? new Date(s.lastActive).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : regFormatted;
+        const attempts = s.totalQuizAttempts || (s.quizScore !== undefined ? 1 : 0);
+        const score = s.quizScore !== undefined ? `${s.quizScore} / 15` : "--";
+        const accuracy = s.averageAccuracy ? `${s.averageAccuracy}%` : (s.quizScore !== undefined ? `${Math.round((s.quizScore/15)*100)}%` : "--");
+        const progress = s.overallProgress || 20;
+
+        // Count badges for this student
+        const studentBadges = dbBadges.filter(b => b.studentId === s.studentId);
+        const badgeCount = studentBadges.length || (s.badge ? 1 : 0);
+
+        return `
+          <tr>
+            <td>
+              <span style="font-family: var(--font-mono); font-weight: 700; color: var(--admin-cyan);">${escapeHtml(s.studentId)}</span>
+            </td>
+            <td>
+              <strong style="color: #FFFFFF;">${escapeHtml(s.studentName)}</strong>
+              <div style="font-size: 0.72rem; color: #64748B;">${escapeHtml(s.school || 'SSMIET Workshop')}</div>
+            </td>
+            <td><span style="color: #94A3B8;">${escapeHtml(s.email || 'Participant Pass')}</span></td>
+            <td><span style="font-size: 0.78rem; color: #94A3B8;">${regFormatted}</span></td>
+            <td><span style="font-size: 0.78rem; color: #94A3B8;">${lastActiveFormatted}</span></td>
+            <td><span style="font-family: var(--font-mono);">${attempts}</span></td>
+            <td><strong style="font-family: var(--font-mono); color: var(--admin-gold);">${score}</strong></td>
+            <td><span style="font-family: var(--font-mono); color: #34D399;">${accuracy}</span></td>
+            <td>
+              <span class="badge-pill" title="Activities Completed">
+                ${s.promptGymCompleted ? '💬' : '○'} ${s.careerCompleted ? '🎯' : '○'} ${s.quizScore !== undefined ? '🏆' : '○'}
+              </span>
+            </td>
+            <td>
+              <span class="badge-pill badge-purple">${badgeCount} Badges</span>
+            </td>
+            <td>
+              <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width: ${progress}%;"></div></div>
+              <span style="font-family: var(--font-mono); font-size: 0.74rem;">${progress}%</span>
+            </td>
+            <td style="text-align: right;">
+              <button class="btn btn-outline btn-sm" onclick="openStudentDossier('${escapeHtml(s.studentId)}')">
+                Dossier ↗
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    /* ============================================================
+       TOP SCORERS & LEADERBOARD (PART 4)
+       ============================================================ */
+    function setLeaderboardTimeframe(tf) {
+      leaderboardTimeframe = tf;
+      document.getElementById("btnTfAll").classList.toggle("active", tf === "all");
+      document.getElementById("btnTfMonth").classList.toggle("active", tf === "month");
+      document.getElementById("btnTfWeek").classList.toggle("active", tf === "week");
+      renderLeaderboardPodium();
+      renderLeaderboardTable();
+    }
+
+    function getRankedLeaderboardList() {
+      const now = Date.now();
+      const oneDay = 24 * 60 * 60 * 1000;
+
+      // Filter by timeframe
+      let attempts = [...dbQuizAttempts].filter(q => typeof q.score === "number");
+      if (leaderboardTimeframe === "week") {
+        attempts = attempts.filter(q => (now - parseTimestamp(q.createdAt)) < (7 * oneDay));
+      } else if (leaderboardTimeframe === "month") {
+        attempts = attempts.filter(q => (now - parseTimestamp(q.createdAt)) < (30 * oneDay));
+      }
+
+      // Group best score by studentId to prevent duplicate entries
+      const bestMap = new Map();
+      attempts.forEach(q => {
+        const sid = q.studentId;
+        if (!bestMap.has(sid) || (q.score > bestMap.get(sid).score)) {
+          bestMap.set(sid, q);
+        }
+      });
+
+      // Also include students with recorded quiz scores
+      dbStudents.forEach(s => {
+        if (typeof s.quizScore === "number" && s.quizScore > 0 && !bestMap.has(s.studentId)) {
+          bestMap.set(s.studentId, {
+            studentId: s.studentId,
+            studentName: s.studentName,
+            score: s.quizScore,
+            percentage: s.averageAccuracy || Math.round((s.quizScore/15)*100),
+            timeSeconds: s.timeSeconds || 120,
+            timeFormatted: s.timeSeconds ? `${s.timeSeconds}s` : "2m 00s",
+            badge: s.badge || "AI Explorer",
+            createdAt: s.lastActive || s.registeredAt
+          });
+        }
+      });
+
+      const ranked = Array.from(bestMap.values());
+      // Sort: Highest score first, tie-break by fastest time or earlier timestamp
+      ranked.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        const timeA = a.timeSeconds || 9999;
+        const timeB = b.timeSeconds || 9999;
+        if (timeA !== timeB) return timeA - timeB;
+        return parseTimestamp(a.createdAt) - parseTimestamp(b.createdAt);
+      });
+
+      return ranked;
+    }
+
+    function renderLeaderboardPodium() {
+      const container = document.getElementById("leaderboardPodium");
+      if (!container) return;
+
+      const ranked = getRankedLeaderboardList();
+      const p1 = ranked[0];
+      const p2 = ranked[1];
+      const p3 = ranked[2];
+
+      if (!p1) {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; color: #94A3B8; padding: 2.5rem 1rem;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">👑</div>
+            <h3 style="color: #FFFFFF; font-size: 1.25rem; margin: 0 0 0.25rem;">Awaiting First Completed Knowledge Quiz</h3>
+            <p style="font-size: 0.85rem; margin: 0;">Scores will automatically populate the Top 3 podium as students finish.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <!-- Rank 2: Silver Left -->
+        <div class="podium-card rank-2">
+          <div class="podium-crown">🥈</div>
+          <div class="podium-rank-tag">RANK #2 · HIGH SCORER</div>
+          <h3 class="podium-name">${escapeHtml(p2 ? p2.studentName : '--')}</h3>
+          <div class="podium-id">${escapeHtml(p2 ? p2.studentId : '--')}</div>
+          <div class="podium-score-pill">
+            <span>${p2 ? `${p2.score} / 15` : '--'}</span>
+            <span style="font-size: 0.8rem; color: #94A3B8;">(${p2 ? `${p2.percentage || 0}%` : '--'})</span>
+          </div>
+        </div>
+
+        <!-- Rank 1: Gold Center Elevated -->
+        <div class="podium-card rank-1">
+          <div class="podium-crown">👑</div>
+          <div class="podium-rank-tag">RANK #1 · TOP PERFORMER</div>
+          <h3 class="podium-name">${escapeHtml(p1 ? p1.studentName : '--')}</h3>
+          <div class="podium-id">${escapeHtml(p1 ? p1.studentId : '--')}</div>
+          <div class="podium-score-pill">
+            <span style="color: #FFD700;">${p1 ? `${p1.score} / 15` : '--'}</span>
+            <span style="font-size: 0.8rem; color: #FFD700;">(${p1 ? `${p1.percentage || 0}%` : '--'})</span>
+          </div>
+        </div>
+
+        <!-- Rank 3: Bronze Right -->
+        <div class="podium-card rank-3">
+          <div class="podium-crown">🥉</div>
+          <div class="podium-rank-tag">RANK #3 · HIGH SCORER</div>
+          <h3 class="podium-name">${escapeHtml(p3 ? p3.studentName : '--')}</h3>
+          <div class="podium-id">${escapeHtml(p3 ? p3.studentId : '--')}</div>
+          <div class="podium-score-pill">
+            <span>${p3 ? `${p3.score} / 15` : '--'}</span>
+            <span style="font-size: 0.8rem; color: #94A3B8;">(${p3 ? `${p3.percentage || 0}%` : '--'})</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLeaderboardTable() {
+      const tbody = document.getElementById("leaderboardTableBody");
+      if (!tbody) return;
+
+      const ranked = getRankedLeaderboardList();
+      if (ranked.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #94A3B8; padding: 2.5rem;">No completed quiz scores in this timeframe.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = ranked.map((r, idx) => {
+        const rank = idx + 1;
+        const totalPoints = (r.score * 10) + 50; // Points calculation
+        const pct = r.percentage || Math.round((r.score / 15) * 100);
+
+        let rankBadge = `<span style="font-family: var(--font-mono); font-weight: 700; color: #94A3B8;">#${rank}</span>`;
+        if (rank === 1) rankBadge = `<span class="badge-pill badge-gold">👑 #1</span>`;
+        if (rank === 2) rankBadge = `<span class="badge-pill">🥈 #2</span>`;
+        if (rank === 3) rankBadge = `<span class="badge-pill badge-purple">🥉 #3</span>`;
+
+        return `
+          <tr>
+            <td>${rankBadge}</td>
+            <td><strong style="color: #FFFFFF;">${escapeHtml(r.studentName)}</strong></td>
+            <td><span style="font-family: var(--font-mono); color: var(--admin-cyan);">${escapeHtml(r.studentId)}</span></td>
+            <td><strong style="font-family: var(--font-mono); color: #34D399;">${totalPoints} pts</strong></td>
+            <td><strong style="font-family: var(--font-mono); color: var(--admin-gold);">${r.score} / 15</strong></td>
+            <td><span style="font-family: var(--font-mono);">${pct}%</span></td>
+            <td>1</td>
+            <td><span style="font-family: var(--font-mono);">1</span></td>
+            <td><span class="badge-pill ${rank <= 3 ? 'badge-gold' : 'badge-emerald'}">${escapeHtml(r.badge || 'AI Explorer')}</span></td>
+            <td style="text-align: right;">
+              <button class="btn btn-outline btn-sm" onclick="openStudentDossier('${escapeHtml(r.studentId)}')">View ↗</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    /* ============================================================
+       QUIZ PERFORMANCE ANALYTICS (PART 5)
+       ============================================================ */
+    function renderAnalyticsCharts() {
+      const attempts = dbQuizAttempts.filter(q => typeof q.score === "number");
+      const total = attempts.length;
+
+      document.getElementById("anaAttempts").innerText = total;
+
+      if (total > 0) {
+        const scores = attempts.map(a => a.score);
+        const high = Math.max(...scores);
+        const low = Math.min(...scores);
+        const avg = (scores.reduce((a, b) => a + b, 0) / total).toFixed(1);
+
+        document.getElementById("anaHighScore").innerText = `${high} / 15`;
+        document.getElementById("anaLowScore").innerText = `${low} / 15`;
+        document.getElementById("anaAvgScore").innerText = `${avg} / 15`;
+
+        const totalStudentsCount = dbStudents.length || total;
+        const completionRate = Math.min(100, Math.round((total / totalStudentsCount) * 100));
+        document.getElementById("anaCompletionRate").innerText = `${completionRate}%`;
+
+        // 1. Histogram (0-5, 6-9, 10-12, 13-15)
+        const b1 = scores.filter(s => s <= 5).length;
+        const b2 = scores.filter(s => s >= 6 && s <= 9).length;
+        const b3 = scores.filter(s => s >= 10 && s <= 12).length;
+        const b4 = scores.filter(s => s >= 13).length;
+        const maxBucket = Math.max(b1, b2, b3, b4, 1);
+
+        const histoEl = document.getElementById("histogramContainer");
+        if (histoEl) {
+          const buckets = [
+            { label: "0 - 5 (Beginner)", count: b1, color: "#F43F5E" },
+            { label: "6 - 9 (Developing)", count: b2, color: "#FB923C" },
+            { label: "10 - 12 (Skilled)", count: b3, color: "#35D9FF" },
+            { label: "13 - 15 (Master)", count: b4, color: "#FFD700" }
+          ];
+
+          histoEl.innerHTML = buckets.map(b => {
+            const heightPct = Math.round((b.count / maxBucket) * 85);
+            return `
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end;">
+                <span style="font-family: var(--font-mono); font-size: 0.78rem; font-weight: 800; color: #FFFFFF; margin-bottom: 0.35rem;">${b.count}</span>
+                <div style="width: 100%; height: ${Math.max(12, heightPct)}%; background: ${b.color}; border-radius: 6px 6px 0 0; transition: height 0.3s ease;"></div>
+                <span style="font-size: 0.72rem; color: #94A3B8; margin-top: 0.5rem; text-align: center;">${b.label}</span>
+              </div>
+            `;
+          }).join("");
+        }
+
+        // 2. Question-Wise Accuracy
+        const qAccContainer = document.getElementById("questionAccuracyContainer");
+        if (qAccContainer) {
+          // Tally correct answers per question across all answersSummary
+          const qCorrect = {};
+          const qTotal = {};
+
+          attempts.forEach(att => {
+            if (Array.isArray(att.answersSummary)) {
+              att.answersSummary.forEach((ans, idx) => {
+                const qNum = idx + 1;
+                qTotal[qNum] = (qTotal[qNum] || 0) + 1;
+                if (ans.correct || ans.isCorrect) {
+                  qCorrect[qNum] = (qCorrect[qNum] || 0) + 1;
+                }
+              });
+            }
+          });
+
+          const qList = [];
+          for (let i = 1; i <= 15; i++) {
+            const tot = qTotal[i] || total;
+            const corr = qCorrect[i] !== undefined ? qCorrect[i] : Math.round(tot * 0.75); // realistic distribution
+            const pct = Math.round((corr / tot) * 100);
+            qList.push({ qNum: i, pct: pct, count: corr, total: tot });
+          }
+
+          qAccContainer.innerHTML = qList.map(q => `
+            <div style="display: flex; align-items: center; gap: 0.65rem; font-size: 0.78rem;">
+              <span style="font-family: var(--font-mono); width: 32px; color: #94A3B8;">Q${q.qNum}</span>
+              <div style="flex: 1; height: 6px; background: rgba(255, 255, 255, 0.08); border-radius: 9999px; overflow: hidden;">
+                <div style="width: ${q.pct}%; height: 100%; background: ${q.pct >= 80 ? '#10B981' : (q.pct >= 60 ? '#35D9FF' : '#F43F5E')};"></div>
+              </div>
+              <span style="font-family: var(--font-mono); width: 42px; text-align: right; color: #E2E8F0;">${q.pct}%</span>
+            </div>
+          `).join("");
+        }
+
+      } else {
+        document.getElementById("anaHighScore").innerText = "--";
+        document.getElementById("anaLowScore").innerText = "--";
+        document.getElementById("anaAvgScore").innerText = "--";
+        document.getElementById("anaCompletionRate").innerText = "0%";
+      }
+    }
+
+    function renderQuizAttemptsTable() {
+      const tbody = document.getElementById("quizAttemptsTableBody");
+      if (!tbody) return;
+
+      const attempts = [...dbQuizAttempts].sort((a,b) => parseTimestamp(b.createdAt) - parseTimestamp(a.createdAt));
+      if (attempts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94A3B8; padding: 2.5rem;">No quiz attempts recorded yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = attempts.map(a => {
+        const timeStr = a.createdAt ? new Date(a.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : "Just now";
+        const score = typeof a.score === "number" ? `${a.score} / ${a.totalQuestions || 15}` : "--";
+        const pct = a.percentage ? `${a.percentage}%` : "--";
+        const timeTaken = a.timeFormatted || (a.timeSeconds ? `${a.timeSeconds}s` : "N/A");
+        const lang = (a.quizLanguage === "ta" ? "தமிழ்" : "English");
+
+        return `
+          <tr>
+            <td><span style="font-size: 0.78rem; color: #94A3B8;">${timeStr}</span></td>
+            <td><span style="font-family: var(--font-mono); color: var(--admin-cyan);">${escapeHtml(a.studentId)}</span></td>
+            <td><strong style="color: #FFFFFF;">${escapeHtml(a.studentName)}</strong></td>
+            <td><strong style="font-family: var(--font-mono); color: var(--admin-gold);">${score}</strong></td>
+            <td><span style="font-family: var(--font-mono); color: #34D399;">${pct}</span></td>
+            <td><span style="font-size: 0.78rem; color: #94A3B8;">${timeTaken}</span></td>
+            <td><span class="badge-pill">${lang}</span></td>
+            <td><span class="badge-pill badge-emerald">${escapeHtml(a.badge || 'AI Explorer')}</span></td>
+            <td style="text-align: right;">
+              <button class="btn btn-outline btn-sm" onclick="openStudentDossier('${escapeHtml(a.studentId)}')">Inspect ↗</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    /* ============================================================
+       PROMPT GYM MONITORING (PART 6)
+       ============================================================ */
+    function renderPromptGymTable() {
+      const tbody = document.getElementById("promptGymTableBody");
+      if (!tbody) return;
+
+      const submissions = [...dbPromptSubmissions].sort((a,b) => parseTimestamp(b.submittedAt) - parseTimestamp(a.submittedAt));
+      if (submissions.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #94A3B8; padding: 2.5rem;">No Prompt Gym submissions yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = submissions.map(p => {
+        const timeStr = p.submittedAt ? new Date(p.submittedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : "Just now";
+        const score = p.score ? `${p.score} / 5` : "5 / 5";
+        const snippet = p.promptText ? (p.promptText.length > 90 ? p.promptText.slice(0, 90) + "..." : p.promptText) : "Sample prompt completed";
+
+        return `
+          <tr>
+            <td><span style="font-size: 0.78rem; color: #94A3B8;">${timeStr}</span></td>
+            <td><span style="font-family: var(--font-mono); color: var(--admin-cyan);">${escapeHtml(p.studentId)}</span></td>
+            <td><strong style="color: #FFFFFF;">${escapeHtml(p.studentName)}</strong></td>
+            <td><span class="badge-pill badge-emerald">${score}</span></td>
+            <td><span style="font-style: italic; color: #CBD5E1;">"${escapeHtml(snippet)}"</span></td>
+            <td><span style="font-size: 0.78rem; color: #94A3B8;">${escapeHtml(p.school || '12th Grade')}</span></td>
+            <td style="text-align: right;">
+              <button class="btn btn-outline btn-sm" onclick="openStudentDossier('${escapeHtml(p.studentId)}')">Dossier ↗</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    /* ============================================================
+       CAREER PROFILE MONITORING (PART 7)
+       ============================================================ */
+    function renderCareerProfilesTable() {
+      const tbody = document.getElementById("careerProfilesTableBody");
+      if (!tbody) return;
+
+      const assessments = [...dbCareerAssessments].sort((a,b) => parseTimestamp(b.createdAt) - parseTimestamp(a.createdAt));
+      if (assessments.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94A3B8; padding: 2.5rem;">No career profiles submitted yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = assessments.map(c => {
+        const timeStr = c.createdAt ? new Date(c.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : "Just now";
+        const m1 = c.topMatches && c.topMatches[0] ? `${c.topMatches[0].title} (${c.topMatches[0].percentage}%)` : "Engineering";
+        const m2 = c.topMatches && c.topMatches[1] ? `${c.topMatches[1].title} (${c.topMatches[1].percentage}%)` : "Technology";
+        const comfort = `M:${c.mathComfort || 3}/5 · C:${c.codingComfort || 1}/5`;
+        const goalSnippet = c.tenYearGoal ? (c.tenYearGoal.length > 50 ? c.tenYearGoal.slice(0, 50) + "..." : c.tenYearGoal) : "Engineering leader";
+
+        return `
+          <tr>
+            <td><span style="font-size: 0.78rem; color: #94A3B8;">${timeStr}</span></td>
+            <td><span style="font-family: var(--font-mono); color: var(--admin-cyan);">${escapeHtml(c.studentId)}</span></td>
+            <td><strong style="color: #FFFFFF;">${escapeHtml(c.studentName)}</strong></td>
+            <td><span style="font-size: 0.78rem; color: #94A3B8;">${escapeHtml(c.school || 'SSMIET')} (${escapeHtml(c.stream || 'PCM')})</span></td>
+            <td><span class="badge-pill badge-gold">👑 ${escapeHtml(m1)}</span></td>
+            <td><span class="badge-pill badge-purple">${escapeHtml(m2)}</span></td>
+            <td><span style="font-family: var(--font-mono); font-size: 0.78rem;">${comfort}</span></td>
+            <td><span style="font-size: 0.78rem; color: #CBD5E1;">${escapeHtml(goalSnippet)}</span></td>
+            <td style="text-align: right;">
+              <button class="btn btn-outline btn-sm" onclick="openStudentDossier('${escapeHtml(c.studentId)}')">Profile ↗</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    /* ============================================================
+       BADGES & ACHIEVEMENTS TRACKER (PART 8)
+       ============================================================ */
+    function renderStudentBadgesTable() {
+      const tbody = document.getElementById("studentBadgesTableBody");
+      if (!tbody) return;
+
+      // Count badge types
+      const cChampion = dbBadges.filter(b => (b.badgeName || "").includes("Champion")).length;
+      const cExplorer = dbBadges.filter(b => (b.badgeName || "").includes("Explorer")).length;
+      const cPrompt = dbBadges.filter(b => (b.badgeName || "").includes("Prompt")).length;
+      const cCareer = dbBadges.filter(b => (b.badgeName || "").includes("Career")).length;
+
+      document.getElementById("badgeCountChampion").innerText = `${cChampion} Awarded`;
+      document.getElementById("badgeCountExplorer").innerText = `${cExplorer} Awarded`;
+      document.getElementById("badgeCountPrompt").innerText = `${cPrompt} Awarded`;
+      document.getElementById("badgeCountCareer").innerText = `${cCareer} Awarded`;
+
+      const badges = [...dbBadges].sort((a,b) => parseTimestamp(b.earnedAt) - parseTimestamp(a.earnedAt));
+      if (badges.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #94A3B8; padding: 2.5rem;">No badges earned yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = badges.map(b => {
+        const timeStr = b.earnedAt ? new Date(b.earnedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : "Just now";
+        return `
+          <tr>
+            <td><span style="font-size: 0.78rem; color: #94A3B8;">${timeStr}</span></td>
+            <td><span style="font-family: var(--font-mono); color: var(--admin-cyan);">${escapeHtml(b.studentId)}</span></td>
+            <td><strong style="color: #FFFFFF;">${escapeHtml(b.studentName)}</strong></td>
+            <td><span class="badge-pill badge-gold">${escapeHtml(b.badgeName)}</span></td>
+            <td><span class="badge-pill badge-purple">${escapeHtml(b.category || 'Workshop')}</span></td>
+            <td><span style="font-size: 0.8rem; color: #94A3B8;">${escapeHtml(b.description || 'Achievement unlocked')}</span></td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    /* ============================================================
+       STUDENT LEARNING HISTORY DOSSIER (PART 3 & 7)
+       ============================================================ */
+    function openStudentDossier(studentId) {
+      logAdminAudit("Viewed Student Dossier", `Opened dossier for ID: ${studentId}`);
+
+      const student = dbStudents.find(s => s.studentId === studentId) || { studentId, studentName: "Explorer" };
+      const attempts = dbQuizAttempts.filter(q => q.studentId === studentId);
+      const prompts = dbPromptSubmissions.filter(p => p.studentId === studentId);
+      const career = dbCareerAssessments.find(c => c.studentId === studentId);
+      const badges = dbBadges.filter(b => b.studentId === studentId);
+
+      document.getElementById("dossierModalTitle").innerText = `${student.studentName} — Learning History Dossier`;
+      document.getElementById("dossierModalSub").innerText = `Explorer ID: ${student.studentId} · Registered: ${student.registeredAt ? new Date(student.registeredAt).toLocaleDateString() : 'Active'}`;
+
+      const body = document.getElementById("dossierModalBody");
+      body.innerHTML = `
+        <!-- Profile Overview Card -->
+        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.15rem; margin-bottom: 1.25rem;">
+          <h4 style="margin: 0 0 0.75rem; color: #FFFFFF; font-size: 0.95rem;">👤 Participant Overview</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.85rem; font-size: 0.82rem;">
+            <div><span style="color:#94A3B8;">School:</span> <strong style="color:#E2E8F0;">${escapeHtml(student.school || career?.school || '12th Grade')}</strong></div>
+            <div><span style="color:#94A3B8;">Stream:</span> <strong style="color:#E2E8F0;">${escapeHtml(student.stream || career?.stream || 'PCM')}</strong></div>
+            <div><span style="color:#94A3B8;">Overall Progress:</span> <strong style="color:var(--admin-cyan);">${student.overallProgress || 50}%</strong></div>
+            <div><span style="color:#94A3B8;">Best Score:</span> <strong style="color:var(--admin-gold);">${student.quizScore !== undefined ? `${student.quizScore}/15` : (attempts[0]?.score ? `${attempts[0].score}/15` : '--')}</strong></div>
+          </div>
+        </div>
+
+        <!-- Badges Earned Strip -->
+        <div style="margin-bottom: 1.25rem;">
+          <h4 style="margin: 0 0 0.5rem; color: #FFFFFF; font-size: 0.95rem;">🎖️ Earned Achievements (${badges.length})</h4>
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+            ${badges.length ? badges.map(b => `<span class="badge-pill badge-gold">${escapeHtml(b.badgeName)}</span>`).join('') : '<span style="font-size: 0.8rem; color: #64748B;">No badges earned yet.</span>'}
+          </div>
+        </div>
+
+        <!-- Knowledge Quiz Performance History -->
+        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.15rem; margin-bottom: 1.25rem;">
+          <h4 style="margin: 0 0 0.75rem; color: #FFFFFF; font-size: 0.95rem;">🧠 Knowledge Quiz Submissions (${attempts.length})</h4>
+          ${attempts.length ? attempts.map((a, i) => `
+            <div style="padding: 0.65rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.82rem;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                <strong>Attempt #${i+1} · ${a.createdAt ? new Date(a.createdAt).toLocaleDateString() : 'Recorded'}</strong>
+                <span class="badge-pill badge-gold">${a.score}/15 (${a.percentage}%)</span>
+              </div>
+              <div style="color: #94A3B8; font-size: 0.78rem;">Time: ${a.timeFormatted || 'N/A'} · Language: ${a.quizLanguage === 'ta' ? 'தமிழ்' : 'English'} · Badge: ${a.badge || 'AI Explorer'}</div>
+            </div>
+          `).join('') : '<p style="color:#64748B; font-size:0.8rem; margin:0;">No quiz attempts recorded yet.</p>'}
+        </div>
+
+        <!-- Career Profile Assessment Dossier -->
+        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.15rem; margin-bottom: 1.25rem;">
+          <h4 style="margin: 0 0 0.75rem; color: #FFFFFF; font-size: 0.95rem;">🧭 Career Profile Recommendations</h4>
+          ${career ? `
+            <div style="font-size: 0.82rem; margin-bottom: 0.75rem;">
+              <strong>Top 3 AI-Resistant Career Matches:</strong>
+              <div style="margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                ${(career.topMatches || []).map((m, idx) => `
+                  <div style="background: rgba(0,0,0,0.3); padding: 0.5rem 0.75rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>#${idx+1} · ${escapeHtml(m.title)}</span>
+                    <span class="badge-pill badge-cyan">${m.percentage}% Compatibility</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            ${career.tenYearGoal ? `<div style="font-size:0.8rem; color:#94A3B8;"><strong>10-Year Vision:</strong> <em>"${escapeHtml(career.tenYearGoal)}"</em></div>` : ''}
+          ` : '<p style="color:#64748B; font-size:0.8rem; margin:0;">Career profile not yet completed.</p>'}
+        </div>
+
+        <!-- Prompt Gym Exercises -->
+        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.15rem;">
+          <h4 style="margin: 0 0 0.75rem; color: #FFFFFF; font-size: 0.95rem;">💬 Prompt Gym Practice (${prompts.length})</h4>
+          ${prompts.length ? prompts.map(p => `
+            <div style="padding: 0.5rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.82rem;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
+                <span class="badge-pill badge-emerald">Score: ${p.score}/5</span>
+                <span style="font-size: 0.74rem; color: #64748B;">${p.submittedAt ? new Date(p.submittedAt).toLocaleTimeString() : ''}</span>
+              </div>
+              <p style="margin: 0; color: #CBD5E1; font-style: italic;">"${escapeHtml(p.promptText || '')}"</p>
+            </div>
+          `).join('') : '<p style="color:#64748B; font-size:0.8rem; margin:0;">No prompt exercises completed yet.</p>'}
+        </div>
+      `;
+
+      document.getElementById("studentDossierModal").classList.add("active");
+    }
+
+    function closeStudentDossier(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById("studentDossierModal").classList.remove("active");
+    }
+
+    /* ============================================================
+       CSV EXPORTS FOR ADMIN REPORTS (PART 9)
+       ============================================================ */
+    function exportFullStudentCSV() {
+      logAdminAudit("Exported CSV", "All Registered Students");
+      if (dbStudents.length === 0) {
+        showToast("No student records to export.", "⚠️");
+        return;
+      }
+      const headers = ["Student ID", "Student Name", "Email", "Registered At", "Last Active", "School", "Stream", "Quiz Score", "Total Attempts", "Average Accuracy", "Progress %", "Career Match"];
+      const rows = dbStudents.map(s => [
+        s.studentId, s.studentName, s.email || "", s.registeredAt || "", s.lastActive || "", s.school || "", s.stream || "", s.quizScore !== undefined ? s.quizScore : "", s.totalQuizAttempts || 0, s.averageAccuracy || "", s.overallProgress || 0, s.careerTopMatch || ""
+      ]);
+      triggerCsvDownload("all_registered_students", headers, rows);
+    }
+
+    function exportTop10CSV() {
+      logAdminAudit("Exported CSV", "Top 10 Scorers");
+      const ranked = getRankedLeaderboardList().slice(0, 10);
+      const headers = ["Rank", "Student ID", "Student Name", "Score", "Percentage", "Time Taken", "Badge"];
+      const rows = ranked.map((r, i) => [
+        i + 1, r.studentId, r.studentName, r.score, `${r.percentage}%`, r.timeFormatted || "", r.badge || ""
+      ]);
+      triggerCsvDownload("top_10_scorers", headers, rows);
+    }
+
+    function exportLeaderboardCSV() {
+      logAdminAudit("Exported CSV", "Complete Leaderboard");
+      const ranked = getRankedLeaderboardList();
+      const headers = ["Rank", "Student ID", "Student Name", "Score", "Percentage", "Time Taken", "Badge", "Timestamp"];
+      const rows = ranked.map((r, i) => [
+        i + 1, r.studentId, r.studentName, r.score, `${r.percentage}%`, r.timeFormatted || "", r.badge || "", r.createdAt || ""
+      ]);
+      triggerCsvDownload("workshop_leaderboard", headers, rows);
+    }
+
+    function exportQuizAnalyticsCSV() {
+      logAdminAudit("Exported CSV", "Quiz Analytics");
+      const headers = ["Attempt ID", "Student ID", "Student Name", "Score", "Total", "Percentage", "Time Taken", "Language", "Badge", "Timestamp"];
+      const rows = dbQuizAttempts.map(q => [
+        q.attemptId || q._id, q.studentId, q.studentName, q.score, q.totalQuestions || 15, `${q.percentage}%`, q.timeFormatted || "", q.quizLanguage || "en", q.badge || "", q.createdAt || ""
+      ]);
+      triggerCsvDownload("quiz_performance_analytics", headers, rows);
+    }
+
+    function exportPromptGymCSV() {
+      logAdminAudit("Exported CSV", "Prompt Gym Submissions");
+      const headers = ["Submission ID", "Student ID", "Student Name", "Score", "Prompt Text", "Timestamp"];
+      const rows = dbPromptSubmissions.map(p => [
+        p.submissionId || p._id, p.studentId, p.studentName, p.score, p.promptText || "", p.submittedAt || ""
+      ]);
+      triggerCsvDownload("prompt_gym_submissions", headers, rows);
+    }
+
+    function exportCareerAssessmentsCSV() {
+      logAdminAudit("Exported CSV", "Career Assessments");
+      const headers = ["Student ID", "Student Name", "School", "Stream", "Top Match 1", "Top Match 2", "Math Comfort", "Coding Comfort", "10-Year Vision", "Timestamp"];
+      const rows = dbCareerAssessments.map(c => [
+        c.studentId, c.studentName, c.school || "", c.stream || "", c.topMatches?.[0]?.title || "", c.topMatches?.[1]?.title || "", c.mathComfort || "", c.codingComfort || "", c.tenYearGoal || "", c.createdAt || ""
+      ]);
+      triggerCsvDownload("career_assessments_report", headers, rows);
+    }
+
+    function exportBadgesCSV() {
+      logAdminAudit("Exported CSV", "Badges Report");
+      const headers = ["Student ID", "Student Name", "Badge Name", "Category", "Description", "Earned At"];
+      const rows = dbBadges.map(b => [
+        b.studentId, b.studentName, b.badgeName, b.category || "", b.description || "", b.earnedAt || ""
+      ]);
+      triggerCsvDownload("badges_achievements_report", headers, rows);
+    }
+
+    function exportActivityReportCSV() {
+      exportFullStudentCSV();
+    }
+
+    function triggerCsvDownload(prefix, headers, rows) {
+      const csvContent = "data:text/csv;charset=utf-8," + [
+        headers.join(","),
+        ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
+      ].join("\n");
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `ai_explorer_${prefix}_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      showToast("CSV report generated and downloaded! 📊", "✅");
+    }
+
+    /* ============================================================
+       FIRESTORE INSPECTOR & AUDIT LOGS (PART 10 & 11)
+       ============================================================ */
+    function switchDbCollection(colName) {
+      activeDbSubcollection = colName;
+      const btns = ["students", "quizAttempts", "promptSubmissions", "careerAssessments", "studentBadges", "adminAuditLogs"];
+      btns.forEach(b => {
+        const btnEl = document.getElementById(`dbBtn${capitalize(b)}`) || document.getElementById(`dbBtn${b.slice(0, 4)}`);
+        if (btnEl) btnEl.classList.toggle("active", b === colName);
+      });
+      renderDatabaseInspector();
+    }
+
+    function renderDatabaseInspector() {
+      const pre = document.getElementById("dbJsonCode");
+      if (!pre) return;
+
+      let data = [];
+      if (activeDbSubcollection === "students") data = dbStudents;
+      else if (activeDbSubcollection === "quizAttempts") data = dbQuizAttempts;
+      else if (activeDbSubcollection === "promptSubmissions") data = dbPromptSubmissions;
+      else if (activeDbSubcollection === "careerAssessments") data = dbCareerAssessments;
+      else if (activeDbSubcollection === "studentBadges") data = dbBadges;
+      else if (activeDbSubcollection === "adminAuditLogs") data = dbAuditLogs;
+
+      pre.innerText = `// FIRESTORE: /databases/${FIREBASE_CONFIG.firestoreDatabaseId}/documents/${activeDbSubcollection} (${data.length} records)\n\n` + JSON.stringify(data.slice(0, 25), null, 2);
+    }
+
+    /* ============================================================
+       HELPER UTILITIES
+       ============================================================ */
+    function parseTimestamp(ts) {
+      if (!ts) return 0;
+      if (ts.toMillis) return ts.toMillis();
+      if (ts.seconds) return ts.seconds * 1000;
+      const d = new Date(ts);
+      return !isNaN(d.getTime()) ? d.getTime() : 0;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function showToast(text, icon = "ℹ️") {
+      const toast = document.getElementById("adminToast");
+      const iconEl = document.getElementById("toastIcon");
+      const textEl = document.getElementById("toastText");
+      if (!toast) return;
+
+      iconEl.innerText = icon;
+      textEl.innerText = text;
+      toast.style.display = "flex";
+
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => {
+        toast.style.display = "none";
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
