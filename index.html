@@ -15,10 +15,8 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@400;500;600;700;800;900&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 
-  <!-- Firebase SDK (Compat mode for static browser client) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase Client Module (Direct connection to named Firestore database & Auth) -->
+  <script type="module" src="/src/firebase-client.ts"></script>
   <link rel="stylesheet" crossorigin href="/assets/main-DyHXmEMH.css">
   <link rel="stylesheet" crossorigin href="/assets/theme-DVUuAc7b.css">
   <style>
@@ -476,8 +474,8 @@
 </head>
 <body>
 
-  <!-- Confetti Canvas for Celebratory Moments (pointer-events: none ensures no clicks are intercepted) -->
-  <canvas id="confettiCanvas" class="confetti-canvas-overlay" style="pointer-events: none !important;"></canvas>
+  <!-- Confetti Canvas for Celebratory Moments -->
+  <canvas id="confettiCanvas" class="confetti-canvas-overlay"></canvas>
 
   <!-- ============================================================
        TOP HEADER: SITE NAME, ID CHIP, GLOBAL LANGUAGE, THEME TOGGLE
@@ -500,10 +498,10 @@
             <span id="chipText">EXPLORER</span>
           </div>
 
-          <!-- Organizer / Admin Portal Button (Direct Navigation to /admin) -->
-          <a href="/admin" id="adminPortalBtn" class="theme-toggle-btn admin-portal-btn" title="Organizer & Teacher Admin Portal" aria-label="Open Workshop Admin Portal" role="button" tabindex="0" onclick="handleAdminPortalClick(event)" style="text-decoration: none; font-size: 0.85rem; font-weight: 700; gap: 0.35rem; padding: 0.4rem 0.75rem; position: relative; z-index: 105; cursor: pointer; pointer-events: auto;">
-            <span>📊</span>
-            <span style="font-size: 0.82rem; font-family: var(--font-heading);" id="headerAdminText">Admin Portal</span>
+          <!-- Organizer / Admin Console Link (PART 1: Dedicated Admin Portal) -->
+          <a href="/admin" id="btnAdminConsole" class="theme-toggle-btn admin-portal-btn" onclick="navigateToAdmin(event)" title="Organizer & Teacher Admin Console" aria-label="Open Workshop Admin Console" style="text-decoration: none; font-size: 0.85rem; font-weight: 700; gap: 0.35rem; padding: 0.4rem 0.75rem; cursor: pointer !important; pointer-events: auto !important; position: relative; z-index: 50; display: inline-flex; align-items: center;">
+            <span style="pointer-events: none;">📊</span>
+            <span style="font-size: 0.82rem; font-family: var(--font-heading); pointer-events: none;" id="headerAdminText">Admin Portal</span>
           </a>
 
           <!-- GLOBAL BILINGUAL LANGUAGE SWITCHER (EN | தமிழ்) -->
@@ -1581,13 +1579,14 @@
 
   <!-- Footer -->
   <footer id="siteFooter">
-    <div class="container">
-      <p id="footerText">AI Explorer · Department of Computer Science and Engineering (CSE), SSM Institute of Engineering and Technology (SSMIET), Dindigul.</p>
-      <p style="margin-top: 0.5rem; font-size: 0.82rem;">
-        <a href="/admin" id="footerAdminLink" onclick="handleAdminPortalClick(event)" style="color: var(--accent-purple, #6e44ff); text-decoration: none; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;">
-          <span>🛡️</span> Organizer & Teacher Admin Portal →
+    <div class="container" style="display: flex; flex-direction: column; align-items: center; gap: 0.65rem;">
+      <p id="footerText" style="margin: 0;">AI Explorer · Department of Computer Science and Engineering (CSE), SSM Institute of Engineering and Technology (SSMIET), Dindigul.</p>
+      <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.82rem;">
+        <a href="/admin" id="footerAdminLink" onclick="navigateToAdmin(event)" class="admin-footer-link" style="color: #6E44FF; font-weight: 700; cursor: pointer !important; text-decoration: underline; display: inline-flex; align-items: center; gap: 0.35rem;">
+          <span style="pointer-events: none;">🔐</span>
+          <span style="pointer-events: none;" id="footerAdminText">Admin Portal & Management System</span>
         </a>
-      </p>
+      </div>
     </div>
   </footer>
 
@@ -1596,6 +1595,44 @@
        Organized with clearly labelled data arrays at the top for teachers
        ============================================================ -->
   <script>
+    /* ============================================================
+       ROBUST ADMIN NAVIGATION & ROUTE SAFEGUARDS
+       ============================================================ */
+    // If the host mistakenly rendered index.html for an /admin route, redirect immediately
+    if (typeof window !== "undefined" && window.location.pathname.startsWith('/admin') && !window.location.pathname.endsWith('.html')) {
+      window.location.replace('/admin.html');
+    }
+
+    function navigateToAdmin(event) {
+      if (event) {
+        try {
+          event.preventDefault();
+          event.stopPropagation();
+        } catch (e) {}
+      }
+      try {
+        window.location.assign('/admin');
+      } catch (err) {
+        window.location.href = '/admin';
+      }
+    }
+    window.navigateToAdmin = navigateToAdmin;
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const adminLinks = [
+        document.getElementById("btnAdminConsole"),
+        document.getElementById("footerAdminLink")
+      ];
+      adminLinks.forEach(function(link) {
+        if (link) {
+          link.addEventListener("click", navigateToAdmin);
+          link.addEventListener("touchend", function(e) {
+            e.preventDefault();
+            navigateToAdmin(e);
+          });
+        }
+      });
+    });
     /* ============================================================
        FIREBASE FIRESTORE CONFIGURATION
        Connected to Google Cloud Firestore database
@@ -3731,14 +3768,6 @@
       }
     }
 
-    function safeStorageRemove(key) {
-      try {
-        localStorage.removeItem(key);
-      } catch (e) {
-        console.warn("Storage remove error:", e);
-      }
-    }
-
     /* ============================================================
        CENTRAL DATABASE PERSISTENCE & REAL-TIME ADMIN SYNC
        Saves to Firestore (students, quizAttempts, promptSubmissions, careerAssessments, studentBadges),
@@ -3785,7 +3814,162 @@
       }, true);
     }
 
+    /* ============================================================
+       PERFORMANCE & ENGAGEMENT METRICS HOOK
+       Logs granular telemetry across all workshop sections to Cloud Firestore
+       allowing real-time administrator monitoring of student progress & scores
+       ============================================================ */
+    async function logPerformanceMetricHook(record) {
+      const fb = window.AI_EXPLORER_FIREBASE;
+      if (!fb || typeof fb.logEngagementMetric !== "function") return;
+
+      try {
+        const sid = record.studentId || STATE.studentId || "EXP-0000";
+        const sname = record.studentName || STATE.studentName || "Explorer";
+
+        let sectionName = "1. Guide";
+        let sectionKey = "guide";
+        let action = record.type || "interaction";
+        let performanceScore = undefined;
+        let maxScore = undefined;
+        let scorePercentage = undefined;
+        let timeSpentSeconds = undefined;
+        let overallProgress = undefined;
+        let details = {};
+
+        if (record.type === "student_registered") {
+          sectionName = "1. Guide & Registration";
+          sectionKey = "guide";
+          action = "registration_completed";
+          overallProgress = 17;
+          details = {
+            school: record.school || STATE.school || "",
+            district: record.district || STATE.district || "",
+            classGrade: record.classGrade || "12th",
+            stream: record.stream || STATE.stream || "PCM"
+          };
+        } else if (record.type === "prompt_gym") {
+          sectionName = "2. Prompt Gym";
+          sectionKey = "gym";
+          action = "prompt_recipe_evaluation";
+          performanceScore = typeof record.promptScore === "number" ? record.promptScore : 5;
+          maxScore = 5;
+          scorePercentage = Math.round((performanceScore / 5) * 100);
+          overallProgress = 34;
+          details = {
+            promptLength: (record.promptText || "").length,
+            promptSnippet: (record.promptText || "").slice(0, 140),
+            ingredients: record.ingredients || {}
+          };
+        } else if (record.type === "tools_completed" || record.type === "tools_interaction") {
+          sectionName = "3. AI Tools Explorer";
+          sectionKey = "tools";
+          action = record.action || "tools_matrix_completed";
+          overallProgress = 50;
+          details = { toolsExplored: record.toolsCount || 7 };
+        } else if (record.type === "resistant_completed" || record.type === "resistant_interaction") {
+          sectionName = "4. AI-Resistant Fields";
+          sectionKey = "resistant";
+          action = record.action || "fields_matrix_completed";
+          overallProgress = 67;
+          details = { fieldsReviewed: record.fieldsCount || 21 };
+        } else if (record.type === "career_profile") {
+          sectionName = "5. Career Profile Quiz";
+          sectionKey = "career";
+          action = "career_dossier_generated";
+          overallProgress = 84;
+          const topMatch = (record.topMatches && record.topMatches[0]) ? record.topMatches[0] : {};
+          performanceScore = topMatch.percentage || 90;
+          maxScore = 100;
+          scorePercentage = topMatch.percentage || 90;
+          details = {
+            topCareer: topMatch.title || "",
+            matchPercentage: topMatch.percentage || 0,
+            stream: record.stream || STATE.stream || "",
+            mathComfort: record.mathComfort,
+            codingComfort: record.codingComfort
+          };
+        } else if (record.type === "knowledge_quiz") {
+          sectionName = "6. Knowledge Quiz";
+          sectionKey = "knowledge";
+          action = "quiz_mastery_completed";
+          performanceScore = typeof record.score === "number" ? record.score : 0;
+          maxScore = record.totalQuestions || 15;
+          scorePercentage = record.percentage || Math.round((performanceScore / maxScore) * 100);
+          timeSpentSeconds = record.timeSeconds || 0;
+          overallProgress = 100;
+          details = {
+            timeFormatted: record.timeFormatted || "",
+            wrongAnswersCount: record.wrongAnswersCount || 0,
+            badgeEarned: record.badge || "AI Explorer",
+            language: record.quizLanguage || STATE.quizLanguage || "en"
+          };
+        } else if (record.type === "section_engagement") {
+          const sMap = {
+            guide: { name: "1. Guide", prog: 17 },
+            gym: { name: "2. Prompt Gym", prog: 34 },
+            tools: { name: "3. AI Tools Explorer", prog: 50 },
+            resistant: { name: "4. AI-Resistant Fields", prog: 67 },
+            career: { name: "5. Career Profile Quiz", prog: 84 },
+            knowledge: { name: "6. Knowledge Quiz", prog: 100 }
+          };
+          const targetKey = record.sectionKey || "guide";
+          sectionKey = targetKey;
+          sectionName = sMap[targetKey]?.name || record.section || "Workshop Section";
+          action = record.action || "section_opened";
+          overallProgress = sMap[targetKey]?.prog || 17;
+          details = record.details || {};
+        }
+
+        const metricPayload = {
+          studentId: sid,
+          studentName: sname,
+          school: record.school || STATE.school || "",
+          district: record.district || STATE.district || "",
+          classGrade: record.classGrade || STATE.classGrade || "12th",
+          stream: record.stream || STATE.stream || "PCM",
+          section: sectionName,
+          sectionKey: sectionKey,
+          action: action,
+          performanceScore: performanceScore,
+          maxScore: maxScore,
+          scorePercentage: scorePercentage,
+          timeSpentSeconds: timeSpentSeconds,
+          overallProgress: overallProgress,
+          details: details,
+          clientTelemetry: {
+            screenWidth: window.innerWidth,
+            screenHeight: window.innerHeight,
+            quizLanguage: STATE.quizLanguage || "en",
+            timestampLocal: new Date().toISOString()
+          }
+        };
+
+        // User / Extension callback hook
+        if (typeof window.onPerformanceMetricLogged === "function") {
+          try {
+            window.onPerformanceMetricLogged(metricPayload, record);
+          } catch (hookErr) {
+            console.warn("External performance metric hook error:", hookErr);
+          }
+        }
+
+        // Write directly to Cloud Firestore named database
+        await fb.logEngagementMetric(metricPayload);
+      } catch (err) {
+        console.warn("Performance metric logging error:", err);
+      }
+    }
+    window.logPerformanceMetricHook = logPerformanceMetricHook;
+
     async function saveSubmission(record, silent = false) {
+      // 0. Hook: Log Performance & Engagement Metric across workshop sections to Cloud Firestore
+      try {
+        logPerformanceMetricHook(record);
+      } catch (metricErr) {
+        console.warn("Performance metric hook error:", metricErr);
+      }
+
       // 1. Save locally first (never block student)
       try {
         const localQueue = safeStorageGet("ai_explorer_offline_results", []) || [];
@@ -3813,7 +3997,78 @@
         }).catch(err => console.warn("Server API submission save error:", err));
       } catch (apiErr) {}
 
-      // 4. Save to Firestore Collections
+      // 4. Save to Firestore Collections via Modular Client (Vercel-Ready)
+      const fb = window.AI_EXPLORER_FIREBASE;
+      if (fb) {
+        try {
+          const sid = record.studentId || STATE.studentId || "EXP-0000";
+          const sname = record.studentName || STATE.studentName || "Explorer";
+
+          if (record.type === "student_registered") {
+            await fb.saveStudentRecord({
+              studentId: sid,
+              studentName: sname,
+              school: record.school || "",
+              district: record.district || "",
+              classGrade: record.classGrade || "12th",
+              stream: record.stream || "PCM",
+              registeredAt: record.createdAt || new Date().toISOString(),
+              status: "Joined Workshop ⚡",
+              overallProgress: 17
+            });
+          } else if (record.type === "prompt_gym") {
+            await fb.savePromptGymSubmission({
+              studentId: sid,
+              studentName: sname,
+              promptText: record.promptText || "",
+              score: record.promptScore || 5,
+              school: record.school || ""
+            });
+          } else if (record.type === "career_profile") {
+            await fb.saveCareerAssessment({
+              studentId: sid,
+              studentName: sname,
+              school: record.school || "",
+              stream: record.stream || "",
+              district: record.district || "",
+              classGrade: record.classGrade || "12th",
+              favSubjects: record.favSubjects || [],
+              mathComfort: record.mathComfort || 3,
+              codingComfort: record.codingComfort || 1,
+              hobbies: record.hobbies || [],
+              careerPriorities: record.careerPriorities || [],
+              workStyle: record.workStyle || "mix",
+              environmentPref: record.environmentPref || "mix",
+              planAfter12th: record.planAfter12th || "",
+              tenYearGoal: record.tenYearGoal || "",
+              topMatches: record.topMatches || [],
+              profileAnalysis: record.profileAnalysis || {}
+            });
+          } else if (record.type === "knowledge_quiz") {
+            await fb.saveQuizSubmission({
+              studentId: sid,
+              studentName: sname,
+              score: typeof record.score === "number" ? record.score : 0,
+              totalQuestions: record.totalQuestions || 15,
+              percentage: record.percentage || 0,
+              timeSeconds: record.timeSeconds || 0,
+              timeFormatted: record.timeFormatted || "",
+              badge: record.badge || "AI Explorer",
+              quizLanguage: record.quizLanguage || STATE.quizLanguage || "en",
+              wrongAnswersCount: record.wrongAnswersCount || 0,
+              school: record.school || "",
+              answersSummary: record.answersSummary || []
+            });
+          }
+
+          if (!silent) showToast("Saved to live workshop cloud database! ☁️");
+          return true;
+        } catch (fbErr) {
+          console.warn("Direct modular Firestore save error, trying compat/local queue:", fbErr);
+        }
+      }
+
+      // 4b. Secondary Compat Firestore write
       if (firestoreDb) {
         try {
           const nowIso = new Date().toISOString();
@@ -4163,30 +4418,10 @@
     }
 
     /* ============================================================
-       ADMIN PORTAL DIRECT NAVIGATION
-       Guarantees smooth transition to /admin route on all hosts (Vercel, local dev)
-       ============================================================ */
-    function handleAdminPortalClick(event) {
-      if (event) {
-        // Allow user to open in new tab with modifier keys or middle-click
-        if (event.metaKey || event.ctrlKey || event.shiftKey || event.button === 1) {
-          return true;
-        }
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      window.location.assign("/admin");
-      return false;
-    }
-    window.handleAdminPortalClick = handleAdminPortalClick;
-
-    /* ============================================================
        INITIALIZATION
        ============================================================ */
     window.addEventListener("DOMContentLoaded", () => {
       initTheme();
-      initAdminNavigation();
-      initSessionResetListener();
       loadSavedState();
       renderToolDots();
       renderToolCard(STATE.unlockedToolIndex);
@@ -4196,62 +4431,6 @@
       initKnowledgeQuiz();
       updateProgressDisplay();
     });
-
-    function initSessionResetListener() {
-      if (typeof BroadcastChannel !== "undefined") {
-        try {
-          const bc = new BroadcastChannel("ai_explorer_db_sync");
-          bc.onmessage = (event) => {
-            if (event.data && event.data.type === "session_reset") {
-              handleSessionReset();
-            }
-          };
-        } catch (e) {}
-      }
-      window.addEventListener("storage", (e) => {
-        if (e.key === "ai_explorer_session_reset") {
-          handleSessionReset();
-        }
-      });
-    }
-
-    function handleSessionReset() {
-      safeStorageRemove("ai_explorer_name");
-      safeStorageRemove("ai_explorer_id");
-      safeStorageRemove("ai_explorer_completed");
-      safeStorageRemove("ai_explorer_quiz_attempts");
-      safeStorageRemove("ai_explorer_quiz_score");
-      safeStorageRemove("ai_explorer_max_tool");
-      safeStorageRemove("ai_explorer_resistant_cards");
-
-      STATE.studentName = "";
-      STATE.studentId = "";
-      STATE.completedSections = new Set();
-      STATE.unlockedToolIndex = 0;
-      STATE.openedResistantCards = new Set();
-
-      const nameInput = document.getElementById("studentNameInput");
-      if (nameInput) nameInput.value = "";
-      const chip = document.getElementById("studentIdChip");
-      if (chip) chip.style.display = "none";
-
-      updateProgressDisplay();
-      switchTab("guide");
-      showToast("🔄 Organizer reset the workshop session! Please create your Explorer ID to begin.");
-    }
-
-    function initAdminNavigation() {
-      const adminBtn = document.getElementById("adminPortalBtn");
-      if (adminBtn) {
-        adminBtn.removeEventListener("click", handleAdminPortalClick);
-        adminBtn.addEventListener("click", handleAdminPortalClick);
-      }
-      const footerLink = document.getElementById("footerAdminLink");
-      if (footerLink) {
-        footerLink.removeEventListener("click", handleAdminPortalClick);
-        footerLink.addEventListener("click", handleAdminPortalClick);
-      }
-    }
 
     function initTheme() {
       // NON-NEGOTIABLE: Light theme only across the entire application
@@ -4493,6 +4672,16 @@
         goToCareerStep(STATE.careerStep || 1);
       } else if (targetTab === "knowledge" && (!STATE.knowledgeQuestions || !STATE.knowledgeQuestions.length)) {
         initKnowledgeQuiz();
+      }
+
+      if (STATE.studentId && targetTab !== "guide") {
+        saveSubmission({
+          type: "section_engagement",
+          sectionKey: targetTab,
+          action: "section_viewed",
+          studentId: STATE.studentId,
+          studentName: STATE.studentName
+        }, true);
       }
 
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -4847,6 +5036,14 @@
       STATE.completedSections.add("tools");
       safeStorageSet("ai_explorer_completed", Array.from(STATE.completedSections));
       updateProgressDisplay();
+      
+      saveSubmission({
+        type: "tools_completed",
+        studentId: STATE.studentId,
+        studentName: STATE.studentName,
+        toolsCount: (typeof TOOLS !== "undefined" && Array.isArray(TOOLS)) ? TOOLS.length : 7
+      }, true);
+
       showToast("AI Tools Explorer Completed! Moving to AI-Resistant Fields...");
       switchTab("resistant");
     }
@@ -5014,6 +5211,14 @@
       STATE.completedSections.add("resistant");
       safeStorageSet("ai_explorer_completed", Array.from(STATE.completedSections));
       updateProgressDisplay();
+
+      saveSubmission({
+        type: "resistant_completed",
+        studentId: STATE.studentId,
+        studentName: STATE.studentName,
+        fieldsCount: (typeof RESISTANT_FIELDS !== "undefined" && Array.isArray(RESISTANT_FIELDS)) ? RESISTANT_FIELDS.length : 21
+      }, true);
+
       showToast("Moving to Career Profile Quiz...");
       switchTab("career");
     }
@@ -6144,6 +6349,7 @@
         brandTitleMain: 'AI EXPLORER <span class="brand-badge">Class 12</span>',
         brandSubtitle: 'SSMIET CSE · 2026 EDITION',
         headerAdminText: 'Admin Portal',
+        footerAdminText: 'Admin Portal & Management System',
         tabGuide: '1. Guide',
         tabGym: '2. Prompt Gym',
         tabTools: '3. AI Tools',
@@ -6259,7 +6465,8 @@
       ta: {
         brandTitleMain: 'AI எக்ஸ்ப்ளோரர் <span class="brand-badge">12-ஆம் வகுப்பு</span>',
         brandSubtitle: 'SSMIET CSE · 2026 பதிப்பு',
-        headerAdminText: 'நிர்வாகக் குழு',
+        headerAdminText: 'நிர்வாக தளம் (Admin)',
+        footerAdminText: 'நிர்வாக தளம் & ஆசிரியர் கன்சோல்',
         tabGuide: '1. வழிகாட்டி',
         tabGym: '2. ப்ராம்ப்ட் ஜிம்',
         tabTools: '3. AI கருவிகள்',
@@ -6397,6 +6604,7 @@
       const subtitle = document.querySelector(".brand-subtitle");
       if (subtitle) subtitle.textContent = dict.brandSubtitle;
       setText("headerAdminText", dict.headerAdminText);
+      setText("footerAdminText", dict.footerAdminText);
 
       // Nav Tabs
       setText("tabText-guide", dict.tabGuide);

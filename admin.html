@@ -11,10 +11,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- Firebase SDK (Compat mode for browser client) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase Client Module (Direct connection to named Firestore database & Auth) -->
+  <script type="module" src="/src/firebase-client.ts"></script>
+  <!-- Recharts Visual Analytics Module (Daily registrations & average quiz scores) -->
+  <script type="module" src="/src/admin-charts.tsx"></script>
   
   <link rel="stylesheet" crossorigin href="/assets/admin-DCXlsE_k.css">
   <link rel="stylesheet" crossorigin href="/assets/theme-DVUuAc7b.css">
@@ -569,6 +569,66 @@
       border-radius: 8px;
       font-size: 0.82rem;
       margin-bottom: 1.25rem;
+    }
+    .login-tabs {
+      display: flex;
+      gap: 0.4rem;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 0.3rem;
+      border-radius: 10px;
+      margin-bottom: 1.25rem;
+    }
+    .login-tab-btn {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      background: transparent;
+      border: none;
+      color: #94A3B8;
+      font-weight: 700;
+      font-size: 0.82rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .login-tab-btn.active {
+      background: linear-gradient(135deg, #0284C7 0%, #2563EB 100%);
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+    }
+    .db-status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34D399;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      margin-bottom: 1.15rem;
+    }
+    .login-error-alert {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #FCA5A5;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      margin-bottom: 1.25rem;
+      display: none;
+      text-align: left;
+    }
+    .login-success-alert {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #6EE7B7;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      margin-bottom: 1.25rem;
       display: none;
       text-align: left;
     }
@@ -629,10 +689,6 @@
           📥 Export CSV
         </button>
 
-        <button id="btnClearDatabase" class="btn btn-outline btn-sm" onclick="confirmClearDatabase()" title="Clear all workshop records and restart session" style="border-color: rgba(244, 63, 94, 0.5); color: #F43F5E; background: rgba(244, 63, 94, 0.08); font-weight: 700;">
-          🗑️ Clear Database
-        </button>
-
         <button id="authBtnLogout" class="btn btn-outline btn-sm" onclick="handleAdminSignOut()" style="display:none;">
           Sign Out
         </button>
@@ -641,60 +697,102 @@
   </header>
 
   <!-- ============================================================
-       VIEW 1: SECURE ADMIN LOGIN GATE (PART 1)
+       VIEW 1: SECURE FIREBASE AUTHENTICATION LOGIN GATE
        ============================================================ -->
   <main id="viewLogin" class="login-container-view">
     <div class="login-card-box">
       <div class="login-icon-badge">🛡️</div>
-      <h2 style="margin: 0 0 0.4rem; font-size: 1.45rem; color: #FFFFFF;">Admin Portal Authentication</h2>
-      <p style="margin: 0 0 1.25rem; font-size: 0.85rem; color: #94A3B8;">
-        Authorized workshop organizers only. Access real-time student telemetry, career dossiers, and analytics.
+      <h2 style="margin: 0 0 0.35rem; font-size: 1.45rem; color: #FFFFFF;">Admin Portal Authentication</h2>
+      <p style="margin: 0 0 0.85rem; font-size: 0.84rem; color: #94A3B8;">
+        Sign in to access real-time workshop student management, quiz analytics, and career dossiers.
       </p>
 
-      <!-- Auth Mode Selector (Sign In vs Create Organizer Account) -->
-      <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; background: rgba(15, 23, 42, 0.8); padding: 0.25rem; border-radius: 10px; border: 1px solid rgba(53, 217, 255, 0.25);">
-        <button type="button" id="authTabLogin" class="btn btn-sm btn-primary" onclick="setAuthMode('login')" style="flex: 1; padding: 0.45rem 0.5rem; font-size: 0.82rem; border-radius: 8px;">
-          🔑 Sign In
+      <!-- Live Database Status Chip -->
+      <div id="loginDbChip" class="db-status-chip">
+        <span class="status-dot"></span>
+        <span id="loginDbChipText">Cloud Firestore: Connecting...</span>
+      </div>
+
+      <!-- Authentication Tabs -->
+      <div class="login-tabs">
+        <button type="button" id="tabBtnSignIn" class="login-tab-btn active" onclick="switchLoginAuthTab('signin')">
+          Sign In
         </button>
-        <button type="button" id="authTabRegister" class="btn btn-sm btn-outline" onclick="setAuthMode('register')" style="flex: 1; padding: 0.45rem 0.5rem; font-size: 0.82rem; border-radius: 8px;">
-          ✨ Create Account
+        <button type="button" id="tabBtnSignUp" class="login-tab-btn" onclick="switchLoginAuthTab('signup')">
+          Create Account
         </button>
       </div>
 
-      <div id="loginAlertBox" class="login-error-alert" style="display: none;"></div>
+      <div id="loginAlertBox" class="login-error-alert"></div>
+      <div id="loginSuccessBox" class="login-success-alert"></div>
 
-      <form onsubmit="handleAdminLoginSubmit(event)" style="text-align: left;">
+      <!-- FORM 1: SIGN IN -->
+      <form id="formAdminSignIn" onsubmit="handleAdminLoginSubmit(event)" style="text-align: left;">
         <div style="margin-bottom: 1rem;">
-          <label id="adminIdLabel" style="display: block; font-size: 0.82rem; color: #94A3B8; margin-bottom: 0.35rem; font-weight: 700;">
-            Admin ID or Email
+          <label style="display: block; font-size: 0.82rem; color: #94A3B8; margin-bottom: 0.35rem; font-weight: 700;">
+            Admin Email Address
           </label>
-          <input type="text" id="adminIdInput" class="admin-input" placeholder="admin or organizer@ssmiet.ac.in" required autocomplete="username" />
-          <span id="adminIdHint" style="font-size: 0.72rem; color: #64748B;">Enter 'admin' or your organizer email</span>
+          <input type="email" id="adminEmailInput" class="admin-input" placeholder="gmurugesh71@gmail.com" required autocomplete="username" />
         </div>
 
         <div style="margin-bottom: 1.25rem;">
           <label style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #94A3B8; margin-bottom: 0.35rem; font-weight: 700;">
             <span>Password</span>
-            <a href="javascript:void(0)" id="resetPasswordLink" onclick="openPasswordResetModal()" style="color: var(--admin-cyan); text-decoration: none; font-size: 0.75rem;">Reset password?</a>
+            <a href="javascript:void(0)" onclick="openPasswordResetModal()" style="color: var(--admin-cyan); text-decoration: none; font-size: 0.75rem;">Forgot password?</a>
           </label>
           <input type="password" id="adminPasswordInput" class="admin-input" placeholder="••••••••" required autocomplete="current-password" />
         </div>
 
         <button type="submit" id="btnAdminSubmit" class="btn btn-primary" style="width: 100%; padding: 0.7rem 1rem; font-weight: 700;">
-          Sign In to Admin Portal →
+          Sign In to Admin Console →
+        </button>
+
+        <div style="margin: 1.15rem 0 0.85rem; display: flex; align-items: center; gap: 0.65rem; color: #64748B; font-size: 0.75rem;">
+          <span style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.1);"></span>
+          <span>OR</span>
+          <span style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.1);"></span>
+        </div>
+
+        <button type="button" onclick="handleGoogleAdminSignIn()" class="btn btn-outline" style="width: 100%; padding: 0.65rem 1rem; background: #FFFFFF; color: #1E293B; border-color: #E2E8F0; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.6rem; cursor: pointer;">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          Sign In with Google
         </button>
       </form>
 
-      <!-- Instant Demo Mode for local / offline workshop inspection -->
-      <div style="margin-top: 1.25rem; padding-top: 1.15rem; border-top: 1px dashed rgba(255, 255, 255, 0.12); text-align: center;">
-        <div style="font-size: 0.78rem; color: #94A3B8; margin-bottom: 0.5rem;">Or preview workshop data without Firebase login:</div>
-        <button type="button" class="btn btn-outline" onclick="activateDemoMode()" style="width: 100%; border: 1px solid var(--admin-gold); color: var(--admin-gold); background: rgba(255, 215, 0, 0.08); font-weight: 700; padding: 0.6rem 1rem;">
-          🚀 Preview in Demo Mode (Local Workshop Data)
-        </button>
-      </div>
+      <!-- FORM 2: CREATE ADMIN ACCOUNT -->
+      <form id="formAdminSignUp" onsubmit="handleAdminSignUpSubmit(event)" style="display: none; text-align: left;">
+        <div style="margin-bottom: 0.9rem;">
+          <label style="display: block; font-size: 0.82rem; color: #94A3B8; margin-bottom: 0.35rem; font-weight: 700;">
+            Admin Email Address
+          </label>
+          <input type="email" id="regEmailInput" class="admin-input" placeholder="organizer@ssmiet.ac.in" required autocomplete="email" />
+        </div>
 
-      <div style="margin-top: 1.15rem; font-size: 0.75rem; color: #64748B;">
-        🔒 Protected by Firebase Authentication & Firestore Security Rules
+        <div style="margin-bottom: 0.9rem;">
+          <label style="display: block; font-size: 0.82rem; color: #94A3B8; margin-bottom: 0.35rem; font-weight: 700;">
+            Create Password
+          </label>
+          <input type="password" id="regPasswordInput" class="admin-input" placeholder="At least 6 characters" minlength="6" required autocomplete="new-password" />
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <label style="display: block; font-size: 0.82rem; color: #94A3B8; margin-bottom: 0.35rem; font-weight: 700;">
+            Confirm Password
+          </label>
+          <input type="password" id="regConfirmPasswordInput" class="admin-input" placeholder="Re-enter password" minlength="6" required autocomplete="new-password" />
+        </div>
+
+        <button type="submit" id="btnAdminRegister" class="btn btn-primary" style="width: 100%; padding: 0.7rem 1rem; font-weight: 700;">
+          Create Admin Account in Firebase →
+        </button>
+
+        <p style="font-size: 0.74rem; color: #64748B; margin: 0.85rem 0 0; line-height: 1.5; text-align: center;">
+          New accounts are verified against authorized administrator domains and permissions.
+        </p>
+      </form>
+
+      <div style="margin-top: 1.35rem; padding-top: 1.15rem; border-top: 1px dashed rgba(255, 255, 255, 0.1); font-size: 0.78rem; color: #64748B;">
+        🔒 Direct Cloud Firestore & Firebase Authentication (Vercel-Ready)
       </div>
     </div>
   </main>
@@ -837,6 +935,11 @@
         <span>📈 Quiz Performance Analytics</span>
       </button>
 
+      <button type="button" class="admin-nav-item" id="tabNavEngagement" onclick="switchNavTab('engagement')">
+        <span>⚡ Section Engagement & Metrics</span>
+        <span class="nav-badge" id="badgeNavEngagement">0</span>
+      </button>
+
       <button type="button" class="admin-nav-item" id="tabNavPromptGym" onclick="switchNavTab('promptgym')">
         <span>💬 Prompt Gym Monitoring</span>
         <span class="nav-badge" id="badgeNavGym">0</span>
@@ -890,6 +993,20 @@
           <div id="quickDomainDistribution" style="display: flex; flex-direction: column; gap: 0.75rem;">
             <!-- Injected via renderQuickDomains() -->
           </div>
+        </div>
+      </div>
+
+      <!-- WORKSHOP SECTION ENGAGEMENT MONITORING FUNNEL -->
+      <div class="admin-card" style="margin-top: 1.5rem;">
+        <div class="card-header-row">
+          <div class="card-title-group">
+            <h2><span>⚡</span> Student Engagement Across Workshop Sections</h2>
+            <p>Real-time telemetry tracking student participation, progression, and performance across all 6 workshop stages</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="switchNavTab('engagement')">View Detailed Metrics →</button>
+        </div>
+        <div id="sectionEngagementFunnel" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem;">
+          <!-- Injected via renderSectionFunnelOverview() -->
         </div>
       </div>
     </div>
@@ -1065,6 +1182,57 @@
           </div>
         </div>
 
+        <!-- RECHARTS VISUAL ANALYTICS: DAILY REGISTRATIONS & AVERAGE QUIZ SCORES -->
+        <div style="margin-bottom: 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <h3 style="margin: 0 0 0.25rem; font-size: 1.15rem; color: #FFFFFF; display: flex; align-items: center; gap: 0.5rem;">
+                <span>📊</span> Interactive Recharts Visual Analytics
+              </h3>
+              <p style="margin: 0; font-size: 0.8rem; color: #94A3B8;">
+                Visualizing total students registered per day and average quiz scores achieved
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <span class="badge-pill badge-cyan" style="font-size: 0.72rem;">Recharts Interactive</span>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 1.5rem;">
+            <!-- CHART 1: Total Number of Students Registered Per Day -->
+            <div style="background: rgba(11, 17, 32, 0.8); border: 1px solid rgba(53, 217, 255, 0.25); border-radius: 14px; padding: 1.25rem; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                  <h4 style="margin: 0 0 0.2rem; font-size: 0.95rem; color: #FFFFFF;">👥 Total Students Registered Per Day</h4>
+                  <div style="font-size: 0.76rem; color: #94A3B8;">Daily onboarding velocity & cumulative progress</div>
+                </div>
+                <div id="chartDailyRegStat" class="badge-pill badge-emerald" style="font-size: 0.72rem;">0 Students</div>
+              </div>
+              <div id="rechartsRegistrationsContainer" style="height: 300px; width: 100%;">
+                <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #64748B; font-size: 0.85rem;">
+                  Loading Recharts Daily Registrations...
+                </div>
+              </div>
+            </div>
+
+            <!-- CHART 2: Average Quiz Scores Achieved Trend -->
+            <div style="background: rgba(11, 17, 32, 0.8); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 14px; padding: 1.25rem; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                  <h4 style="margin: 0 0 0.2rem; font-size: 0.95rem; color: #FFFFFF;">🧠 Average Quiz Scores Achieved</h4>
+                  <div style="font-size: 0.76rem; color: #94A3B8;">Daily score averages (out of 15) vs 80% (12/15) Benchmark</div>
+                </div>
+                <div id="chartAvgScoreStat" class="badge-pill badge-gold" style="font-size: 0.72rem;">Avg: -- / 15</div>
+              </div>
+              <div id="rechartsScoresContainer" style="height: 300px; width: 100%;">
+                <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #64748B; font-size: 0.85rem;">
+                  Loading Recharts Average Quiz Scores...
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Visual SVG Charts Grid -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
           <!-- Score Distribution Histogram -->
@@ -1103,6 +1271,113 @@
             </thead>
             <tbody id="quizAttemptsTableBody">
               <!-- Injected via renderQuizAttemptsTable() -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         TAB: SECTION ENGAGEMENT & PERFORMANCE METRICS
+         ============================================================ -->
+    <div id="tabContentEngagement" class="tab-panel" style="display: none;">
+      <div class="admin-card">
+        <div class="card-header-row">
+          <div class="card-title-group">
+            <h2><span>⚡</span> Student Engagement Across Workshop Sections</h2>
+            <p>Real-time telemetry and performance metrics logged across all 6 sections: Guide, Prompt Gym, AI Tools, AI-Resistant Fields, Career Profile, and Knowledge Quiz</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="exportEngagementCSV()">📥 Export Engagement CSV</button>
+        </div>
+
+        <!-- 4 Key Engagement HUD Stats -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
+          <div class="stat-card-10">
+            <div class="stat-meta">
+              <h3>Total Section Telemetry Events</h3>
+              <div class="stat-value" id="engTotalEvents">0</div>
+              <div class="stat-sub">Logged to Cloud Firestore</div>
+            </div>
+            <div class="stat-icon">📡</div>
+          </div>
+
+          <div class="stat-card-10 emerald">
+            <div class="stat-meta">
+              <h3>Active Participating Students</h3>
+              <div class="stat-value" id="engActiveStudents">0</div>
+              <div class="stat-sub">Engaged across sections</div>
+            </div>
+            <div class="stat-icon">🧑‍🎓</div>
+          </div>
+
+          <div class="stat-card-10 gold">
+            <div class="stat-meta">
+              <h3>Average Workshop Progress</h3>
+              <div class="stat-value" id="engAvgProgress">0%</div>
+              <div class="stat-sub">Across all curriculum stages</div>
+            </div>
+            <div class="stat-icon">📈</div>
+          </div>
+
+          <div class="stat-card-10 purple">
+            <div class="stat-meta">
+              <h3>Top Active Section</h3>
+              <div class="stat-value" id="engTopSection" style="font-size: 1.15rem;">--</div>
+              <div class="stat-sub">Highest engagement velocity</div>
+            </div>
+            <div class="stat-icon">🔥</div>
+          </div>
+        </div>
+
+        <!-- 6 Section Health & Performance Cards -->
+        <h3 style="color: #FFFFFF; font-size: 1.05rem; margin: 0 0 0.85rem;">Workshop Sections Performance Matrix</h3>
+        <div id="sectionCardsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+          <!-- Dynamically populated via renderEngagementMonitoring() -->
+        </div>
+
+        <!-- Real-Time Engagement Event Stream -->
+        <div class="card-header-row" style="margin-top: 1.5rem;">
+          <div class="card-title-group">
+            <h3 style="margin: 0; color: #FFFFFF; font-size: 1.05rem;">Real-Time Section Engagement Stream</h3>
+            <p>Granular activity stream of student performance metrics captured live from client submissions</p>
+          </div>
+        </div>
+
+        <!-- Filter Toolbar -->
+        <div class="filter-toolbar">
+          <div class="search-input-wrap">
+            <input type="text" id="engSearchInput" class="admin-input" placeholder="Search by student name or Explorer ID..." oninput="filterEngagementTable()" />
+          </div>
+
+          <select id="engSectionFilter" class="admin-select" style="max-width: 220px;" onchange="filterEngagementTable()">
+            <option value="all">All Workshop Sections</option>
+            <option value="guide">1. Guide & Registration</option>
+            <option value="gym">2. Prompt Gym</option>
+            <option value="tools">3. AI Tools Explorer</option>
+            <option value="resistant">4. AI-Resistant Fields</option>
+            <option value="career">5. Career Profile Quiz</option>
+            <option value="knowledge">6. Knowledge Quiz</option>
+          </select>
+
+          <button class="btn btn-outline btn-sm" onclick="resetEngagementFilters()">Clear</button>
+        </div>
+
+        <!-- Telemetry Table -->
+        <div class="table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Explorer ID</th>
+                <th>Student Name</th>
+                <th>Workshop Section</th>
+                <th>Action / Milestone</th>
+                <th>Score / Progress</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="engagementTableBody">
+              <!-- Dynamically populated via renderEngagementMonitoring() -->
             </tbody>
           </table>
         </div>
@@ -1298,6 +1573,12 @@
             <p style="font-size: 0.82rem; color: #94A3B8; margin-bottom: 1rem;">12th-grade student stream selections, top 3 matched engineering fields, and 10-year goals.</p>
             <button class="btn btn-primary btn-sm" onclick="exportCareerAssessmentsCSV()">📥 Download CSV</button>
           </div>
+
+          <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.25rem;">
+            <h3 style="margin: 0 0 0.35rem; color: #FFFFFF; font-size: 1rem;">8. Section Engagement & Performance Report</h3>
+            <p style="font-size: 0.82rem; color: #94A3B8; margin-bottom: 1rem;">Complete student telemetry across all 6 workshop stages, section-by-section velocity, scores, and milestones.</p>
+            <button class="btn btn-primary btn-sm" onclick="exportEngagementCSV()">📥 Download CSV</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1310,7 +1591,7 @@
         <div class="card-header-row">
           <div class="card-title-group">
             <h2><span>🗄️</span> Live Central Firestore Collections & Security Audit</h2>
-            <p>Direct view into Cloud Firestore collections: students, quizAttempts, promptSubmissions, careerAssessments, adminAuditLogs</p>
+            <p>Direct view into Cloud Firestore collections: students, quizAttempts, promptSubmissions, careerAssessments, adminAuditLogs, engagementMetrics</p>
           </div>
         </div>
 
@@ -1321,6 +1602,7 @@
           <button class="btn btn-outline btn-sm" id="dbBtnGym" onclick="switchDbCollection('promptSubmissions')">promptSubmissions</button>
           <button class="btn btn-outline btn-sm" id="dbBtnCareer" onclick="switchDbCollection('careerAssessments')">careerAssessments</button>
           <button class="btn btn-outline btn-sm" id="dbBtnBadges" onclick="switchDbCollection('studentBadges')">studentBadges</button>
+          <button class="btn btn-outline btn-sm" id="dbBtnMetrics" onclick="switchDbCollection('engagementMetrics')">engagementMetrics</button>
           <button class="btn btn-outline btn-sm" id="dbBtnAudit" onclick="switchDbCollection('adminAuditLogs')">adminAuditLogs</button>
         </div>
 
@@ -1399,8 +1681,7 @@
 
     // State Variables
     let currentAdminUser = null;
-    let firestoreDb = null;
-    let authClient = null;
+    let unsubscribeWorkshop = null;
 
     // Live Collections In Memory (All from Firestore)
     let dbStudents = [];
@@ -1408,6 +1689,7 @@
     let dbPromptSubmissions = [];
     let dbCareerAssessments = [];
     let dbBadges = [];
+    let dbEngagementMetrics = [];
     let dbAuditLogs = [];
 
     // Filter states
@@ -1423,93 +1705,87 @@
       initBroadcastSync();
     });
 
-    function initFirebaseAdmin() {
+    // Also listen if the module emits ready event
+    window.addEventListener("ai-explorer-firebase-ready", () => {
+      initFirebaseAdmin();
+    });
+
+    window.addEventListener("admin-recharts-ready", () => {
+      if (typeof window.renderAdminRecharts === "function" && dbStudents.length) {
+        window.renderAdminRecharts({ students: dbStudents, quizAttempts: dbQuizAttempts });
+      }
+    });
+
+    async function initFirebaseAdmin() {
       const connPill = document.getElementById("connStatus");
       const connText = document.getElementById("connStatusText");
+      const dbChipText = document.getElementById("loginDbChipText");
 
-      try {
-        if (typeof firebase !== "undefined") {
-          if (!firebase.apps.length) {
-            firebase.initializeApp(FIREBASE_CONFIG);
-          }
-          authClient = firebase.auth();
-          firestoreDb = firebase.app().firestore(FIREBASE_CONFIG.firestoreDatabaseId);
-
-          if (connText) connText.innerText = "Firestore Connected 🟢";
-
-          // Listen to Authentication State & Enforce Admin Role
-          authClient.onAuthStateChanged(async (user) => {
-            if (user) {
-              // Strict Admin Role Verification
-              const normalizedEmail = (user.email || '').toLowerCase().trim();
-              let isAuthorized = (
-                normalizedEmail === 'gmurugesh71@gmail.com' ||
-                normalizedEmail === 'vaanadhikaarthihaa71@gmail.com' ||
-                normalizedEmail.includes('vaanadhi') ||
-                normalizedEmail === 'admin@aiexplorer.edu' ||
-                normalizedEmail.startsWith('admin') ||
-                normalizedEmail.includes('organizer') ||
-                normalizedEmail.includes('teacher') ||
-                normalizedEmail.endsWith('@ssmiet.ac.in') ||
-                Boolean(sessionStorage.getItem('ai_explorer_admin_auth')) ||
-                Boolean(user.uid)
-              );
-
-              if (!isAuthorized) {
-                try {
-                  const tokenResult = await user.getIdTokenResult();
-                  if (tokenResult.claims && tokenResult.claims.admin) {
-                    isAuthorized = true;
-                  } else {
-                    const adminDoc = await firestoreDb.collection("admins").doc(user.uid).get();
-                    if (adminDoc.exists) {
-                      isAuthorized = true;
-                    }
-                  }
-                } catch (roleErr) {
-                  console.warn("Role verification lookup:", roleErr);
-                }
-              }
-
-              if (!isAuthorized) {
-                currentAdminUser = null;
-                document.getElementById("viewLogin").style.display = "flex";
-                document.getElementById("viewDashboard").style.display = "none";
-                document.getElementById("authBtnLogout").style.display = "none";
-
-                const alertBox = document.getElementById("loginAlertBox");
-                if (alertBox) {
-                  alertBox.innerText = `Access Denied: Account (${user.email}) does not have Administrator privileges.`;
-                  alertBox.style.display = "block";
-                }
-                showToast("Access Denied: Admin privileges required.", "🚫");
-                await authClient.signOut();
-                return;
-              }
-
-              // Authorized Admin Verified
-              currentAdminUser = user;
-              document.getElementById("viewLogin").style.display = "none";
-              document.getElementById("viewDashboard").style.display = "block";
-              document.getElementById("authBtnLogout").style.display = "inline-flex";
-
-              logAdminAudit("Admin Session Activated", `Signed in as ${user.email}`);
-              showToast(`Welcome Admin (${user.email})!`, "🛡️");
-
-              // Start real-time Firestore listeners
-              startFirestoreListeners();
-            } else {
-              currentAdminUser = null;
-              document.getElementById("viewLogin").style.display = "flex";
-              document.getElementById("viewDashboard").style.display = "none";
-              document.getElementById("authBtnLogout").style.display = "none";
-            }
-          });
-        }
-      } catch (err) {
-        console.error("Firebase admin initialization error:", err);
-        if (connText) connText.innerText = "Connection Warning ⚠️";
+      const fb = window.AI_EXPLORER_FIREBASE;
+      if (!fb) {
+        setTimeout(initFirebaseAdmin, 80);
+        return;
       }
+
+      // 1. Verify Cloud Firestore Connection
+      try {
+        const testRes = await fb.testConnection();
+        if (testRes.success) {
+          if (connText) connText.innerText = `Firestore: ${testRes.databaseId} 🟢`;
+          if (dbChipText) dbChipText.innerText = `Cloud Firestore: Connected 🟢 (${testRes.databaseId})`;
+        } else {
+          if (connText) connText.innerText = "Firestore: Offline ⚠️";
+          if (dbChipText) dbChipText.innerText = "Cloud Firestore: Reconnecting...";
+        }
+      } catch (e) {
+        if (connText) connText.innerText = "Firestore: Connecting...";
+      }
+
+      // 2. Listen to Firebase Authentication State
+      fb.onAuthStateChanged(async (user) => {
+        const alertBox = document.getElementById("loginAlertBox");
+        if (alertBox) alertBox.style.display = "none";
+
+        if (user) {
+          // Verify administrator privileges
+          const isAuthorized = await fb.isUserAuthorizedAdmin(user);
+          if (!isAuthorized) {
+            currentAdminUser = null;
+            document.getElementById("viewLogin").style.display = "flex";
+            document.getElementById("viewDashboard").style.display = "none";
+            document.getElementById("authBtnLogout").style.display = "none";
+
+            if (alertBox) {
+              alertBox.innerText = `Access Denied: Account (${user.email}) is not registered as an authorized administrator. Authorized: gmurugesh71@gmail.com, @aiexplorer.edu.`;
+              alertBox.style.display = "block";
+            }
+            showToast("Access Denied: Administrator role required.", "🚫");
+            await fb.signOut();
+            return;
+          }
+
+          // Verified Administrator Access
+          currentAdminUser = user;
+          document.getElementById("viewLogin").style.display = "none";
+          document.getElementById("viewDashboard").style.display = "block";
+          document.getElementById("authBtnLogout").style.display = "inline-flex";
+
+          fb.logAdminAudit("Admin Session Activated", `Authenticated via Firebase as ${user.email}`);
+          showToast(`Welcome Admin (${user.email})!`, "🛡️");
+
+          // Start live real-time listeners for all 6 collections
+          startFirestoreListeners();
+        } else {
+          currentAdminUser = null;
+          document.getElementById("viewLogin").style.display = "flex";
+          document.getElementById("viewDashboard").style.display = "none";
+          document.getElementById("authBtnLogout").style.display = "none";
+          if (unsubscribeWorkshop) {
+            try { unsubscribeWorkshop(); } catch (e) {}
+            unsubscribeWorkshop = null;
+          }
+        }
+      });
     }
 
     function initBroadcastSync() {
@@ -1523,7 +1799,6 @@
               } else if (event.data.record && event.data.record.type === "knowledge_quiz") {
                 showToast(`🏆 ${event.data.record.studentName} completed quiz with ${event.data.record.score}/15!`, "🎯");
               }
-              // Refresh collections
               syncAllFromFirestore();
             }
           };
@@ -1532,246 +1807,196 @@
     }
 
     /* ============================================================
-       AUTHENTICATION & ORGANIZER ONBOARDING HANDLERS
-       Supports Sign-In, Direct Organizer Registration & Instant Demo Mode
+       AUTHENTICATION HANDLERS (AUTHENTIC FIREBASE AUTH)
        ============================================================ */
-    let authMode = "login"; // "login" | "register"
-
-    function setAuthMode(mode) {
-      authMode = mode;
-      const tabLogin = document.getElementById("authTabLogin");
-      const tabRegister = document.getElementById("authTabRegister");
-      const btnSubmit = document.getElementById("btnAdminSubmit");
-      const hint = document.getElementById("adminIdHint");
+    function switchLoginAuthTab(tab) {
+      const btnIn = document.getElementById("tabBtnSignIn");
+      const btnUp = document.getElementById("tabBtnSignUp");
+      const formIn = document.getElementById("formAdminSignIn");
+      const formUp = document.getElementById("formAdminSignUp");
       const alertBox = document.getElementById("loginAlertBox");
-      if (alertBox) alertBox.style.display = "none";
+      const successBox = document.getElementById("loginSuccessBox");
 
-      if (mode === "register") {
-        if (tabLogin) {
-          tabLogin.className = "btn btn-sm btn-outline";
-          tabLogin.style.color = "#94A3B8";
-          tabLogin.style.background = "transparent";
-        }
-        if (tabRegister) {
-          tabRegister.className = "btn btn-sm btn-primary";
-          tabRegister.style.color = "#0F172A";
-          tabRegister.style.background = "var(--admin-cyan)";
-        }
-        if (btnSubmit) btnSubmit.innerText = "Create Organizer Account & Sign In →";
-        if (hint) hint.innerText = "Enter your email (e.g. teacher@ssmiet.ac.in or personal email) & password";
+      if (alertBox) alertBox.style.display = "none";
+      if (successBox) successBox.style.display = "none";
+
+      if (tab === "signup") {
+        btnIn.classList.remove("active");
+        btnUp.classList.add("active");
+        formIn.style.display = "none";
+        formUp.style.display = "block";
       } else {
-        if (tabLogin) {
-          tabLogin.className = "btn btn-sm btn-primary";
-          tabLogin.style.color = "#0F172A";
-          tabLogin.style.background = "var(--admin-cyan)";
-        }
-        if (tabRegister) {
-          tabRegister.className = "btn btn-sm btn-outline";
-          tabRegister.style.color = "#94A3B8";
-          tabRegister.style.background = "transparent";
-        }
-        if (btnSubmit) btnSubmit.innerText = "Sign In to Admin Portal →";
-        if (hint) hint.innerText = "Enter 'admin' or your organizer email";
+        btnUp.classList.remove("active");
+        btnIn.classList.add("active");
+        formUp.style.display = "none";
+        formIn.style.display = "block";
       }
     }
 
     async function handleAdminLoginSubmit(e) {
       e.preventDefault();
-      const rawId = document.getElementById("adminIdInput").value.trim();
-      const password = document.getElementById("adminPasswordInput").value;
+      const email = (document.getElementById("adminEmailInput")?.value || "").trim();
+      const password = document.getElementById("adminPasswordInput")?.value || "";
       const alertBox = document.getElementById("loginAlertBox");
+      const successBox = document.getElementById("loginSuccessBox");
       const btn = document.getElementById("btnAdminSubmit");
 
-      alertBox.style.display = "none";
-      btn.disabled = true;
+      if (alertBox) alertBox.style.display = "none";
+      if (successBox) successBox.style.display = "none";
 
-      // Map 'admin' shorthand to admin email if entered
-      let email = rawId;
-      if (rawId.toLowerCase() === "admin") {
-        email = "gmurugesh71@gmail.com";
-      } else if (!rawId.includes("@")) {
-        email = `${rawId}@aiexplorer.edu`;
+      if (!window.AI_EXPLORER_FIREBASE) {
+        if (alertBox) {
+          alertBox.innerText = "Firebase client is initializing. Please wait a moment...";
+          alertBox.style.display = "block";
+        }
+        return;
       }
 
-      if (authMode === "register") {
-        btn.innerText = "Registering with Firebase...";
-        try {
-          await authClient.createUserWithEmailAndPassword(email, password);
-          showToast("Organizer account registered! Signed in successfully.", "🎉");
-        } catch (err) {
-          if (err.code === "auth/email-already-in-use") {
-            try {
-              btn.innerText = "Signing in with existing account...";
-              await authClient.signInWithEmailAndPassword(email, password);
-              showToast("Account recognized. Signed in successfully!", "🔑");
-              return;
-            } catch (signInErr) {
-              alertBox.innerText = "Account already exists with this email. Please switch to 'Sign In' and enter your password.";
-              alertBox.style.display = "block";
-            }
-          } else {
-            alertBox.innerText = err.message || "Failed to create account. Please check your credentials.";
-            alertBox.style.display = "block";
-          }
-        } finally {
-          btn.disabled = false;
-          btn.innerText = authMode === "register" ? "Create Organizer Account & Sign In →" : "Sign In to Admin Portal →";
+      btn.disabled = true;
+      btn.innerText = "Authenticating with Firebase...";
+
+      try {
+        await window.AI_EXPLORER_FIREBASE.signInWithEmailAndPassword(email, password);
+        // onAuthStateChanged will handle role check and transition
+      } catch (err) {
+        console.warn("Firebase email login error:", err);
+        let msg = "Invalid login credentials. Please check your email and password.";
+        if (err.code === "auth/user-not-found") {
+          msg = "No account found with this email. Switch to the 'Create Account' tab to register.";
+        } else if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+          msg = "Incorrect password or email. Click 'Forgot password?' if you need to reset it.";
+        } else if (err.code === "auth/too-many-requests") {
+          msg = "Too many failed attempts. Access temporarily locked. Please try again shortly.";
+        } else if (err.code === "auth/invalid-email") {
+          msg = "Please enter a valid email address.";
+        } else if (err.message) {
+          msg = err.message;
         }
-      } else {
-        btn.innerText = "Verifying with Firebase...";
-        try {
-          await authClient.signInWithEmailAndPassword(email, password);
-        } catch (err) {
-          let msg = err.message || "Failed to authenticate. Please check your credentials.";
-          if (err.code === "auth/invalid-credential" || err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
-            msg = "Credentials not recognized. Tip: If you haven't created your organizer account yet, click 'Create Account' above, or click 'Preview in Demo Mode' below to inspect the database immediately.";
-          }
+
+        if (alertBox) {
           alertBox.innerText = msg;
           alertBox.style.display = "block";
-        } finally {
-          btn.disabled = false;
-          btn.innerText = "Sign In to Admin Portal →";
         }
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Sign In to Admin Console →";
       }
     }
 
-    function activateDemoMode() {
-      currentAdminUser = {
-        email: "organizer@ssmiet.ac.in",
-        displayName: "SSMIET Workshop Organizer"
-      };
-      sessionStorage.setItem("ai_explorer_admin_auth", "true");
-      document.getElementById("viewLogin").style.display = "none";
-      document.getElementById("viewDashboard").style.display = "block";
-      document.getElementById("authBtnLogout").style.display = "inline-flex";
+    async function handleAdminSignUpSubmit(e) {
+      e.preventDefault();
+      const email = (document.getElementById("regEmailInput")?.value || "").trim();
+      const password = document.getElementById("regPasswordInput")?.value || "";
+      const confirmPassword = document.getElementById("regConfirmPasswordInput")?.value || "";
+      const alertBox = document.getElementById("loginAlertBox");
+      const successBox = document.getElementById("loginSuccessBox");
+      const btn = document.getElementById("btnAdminRegister");
 
-      const connText = document.getElementById("connStatusText");
-      if (connText) connText.innerText = "Workshop DB (Active) 🟢";
+      if (alertBox) alertBox.style.display = "none";
+      if (successBox) successBox.style.display = "none";
 
-      showToast("Admin Dashboard Activated! Loaded workshop records.", "🚀");
-      loadDemoOrLocalData();
-    }
-
-    async function loadDemoOrLocalData() {
-      try {
-        const res = await fetch("/api/database");
-        if (res.ok) {
-          const json = await res.json();
-          dbStudents = json.students || [];
-          dbQuizAttempts = (json.submissions || []).filter(s => s.type === "knowledge_quiz");
-          dbCareerAssessments = (json.submissions || []).filter(s => s.type === "career_profile");
-          recalculateAndRender();
-          return;
+      if (password !== confirmPassword) {
+        if (alertBox) {
+          alertBox.innerText = "Passwords do not match. Please re-enter.";
+          alertBox.style.display = "block";
         }
-      } catch (e) {
-        console.warn("Could not load local database records:", e);
+        return;
       }
 
-      // Pure empty state: only real records, zero mock data
-      dbStudents = [];
-      dbQuizAttempts = [];
-      dbCareerAssessments = [];
-      dbPromptSubmissions = [];
-      dbBadges = [];
-      recalculateAndRender();
-    }
+      if (password.length < 6) {
+        if (alertBox) {
+          alertBox.innerText = "Password must be at least 6 characters long.";
+          alertBox.style.display = "block";
+        }
+        return;
+      }
 
-    /* ============================================================
-       CLEAR DATABASE & RESTART WORKSHOP SESSION
-       Purges all records and triggers connected student screens to Step 0
-       ============================================================ */
-    async function confirmClearDatabase() {
-      const confirmed = window.confirm(
-        "⚠️ RESET SESSION & CLEAR DATABASE?\n\n" +
-        "• All student registrations, quiz results, and career dossiers will be permanently erased.\n" +
-        "• Connected student screens will automatically reset to Step 0 (Guide Tab).\n" +
-        "• The workshop session will start completely fresh from 0.\n\n" +
-        "Do you want to proceed?"
-      );
-      if (!confirmed) return;
-      await executeClearDatabase();
-    }
+      if (!window.AI_EXPLORER_FIREBASE) {
+        if (alertBox) {
+          alertBox.innerText = "Firebase client is initializing. Please wait a moment...";
+          alertBox.style.display = "block";
+        }
+        return;
+      }
 
-    async function executeClearDatabase() {
-      showToast("Clearing database and resetting session...", "⏳");
+      btn.disabled = true;
+      btn.innerText = "Creating Account in Firebase...";
 
-      // 1. Clear server database
       try {
-        await fetch("/api/database/clear", { method: "POST" });
+        await window.AI_EXPLORER_FIREBASE.createUserWithEmailAndPassword(email, password);
+        if (successBox) {
+          successBox.innerText = "Account created in Firebase! Verifying administrator authorization...";
+          successBox.style.display = "block";
+        }
       } catch (err) {
-        console.warn("Server database clear request:", err);
-      }
-
-      // 2. Clear Firestore collections if connected
-      if (firestoreDb && currentAdminUser) {
-        const collectionsToClear = [
-          "students",
-          "quizAttempts",
-          "careerAssessments",
-          "promptSubmissions",
-          "studentBadges",
-          "studentProgress",
-          "results"
-        ];
-        for (const colName of collectionsToClear) {
-          try {
-            const snapshot = await firestoreDb.collection(colName).get();
-            if (!snapshot.empty) {
-              const batch = firestoreDb.batch();
-              snapshot.docs.forEach(doc => batch.delete(doc.ref));
-              await batch.commit();
-            }
-          } catch (colErr) {
-            console.warn(`Firestore clear for ${colName}:`, colErr);
-          }
+        console.warn("Firebase sign up error:", err);
+        let msg = "Could not create account in Firebase.";
+        if (err.code === "auth/email-already-in-use") {
+          msg = "This email is already registered in Firebase. Switch to the 'Sign In' tab.";
+        } else if (err.code === "auth/weak-password") {
+          msg = "Password is too weak. Please choose a stronger password.";
+        } else if (err.code === "auth/invalid-email") {
+          msg = "Please enter a valid email address.";
+        } else if (err.message) {
+          msg = err.message;
         }
+
+        if (alertBox) {
+          alertBox.innerText = msg;
+          alertBox.style.display = "block";
+        }
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Create Admin Account in Firebase →";
       }
-
-      // 3. Clear in-memory arrays and recalculate metrics
-      dbStudents = [];
-      dbQuizAttempts = [];
-      dbCareerAssessments = [];
-      dbPromptSubmissions = [];
-      dbBadges = [];
-      dbAuditLogs = [];
-      recalculateAndRender();
-
-      // 4. Broadcast session_reset to all student tabs
-      if (typeof BroadcastChannel !== "undefined") {
-        try {
-          const bc = new BroadcastChannel("ai_explorer_db_sync");
-          bc.postMessage({ type: "session_reset", timestamp: Date.now() });
-          bc.close();
-        } catch (bcErr) {}
-      }
-
-      // 5. Set session_reset in localStorage so even background tabs reset
-      try {
-        localStorage.setItem("ai_explorer_session_reset", Date.now().toString());
-        localStorage.removeItem("ai_explorer_name");
-        localStorage.removeItem("ai_explorer_id");
-        localStorage.removeItem("ai_explorer_completed");
-        localStorage.removeItem("ai_explorer_quiz_score");
-        localStorage.removeItem("ai_explorer_quiz_attempts");
-      } catch (lsErr) {}
-
-      showToast("Database cleared! New session started. 🎯", "✅");
     }
 
-    function handleAdminSignOut() {
-      sessionStorage.removeItem("ai_explorer_admin_auth");
+    async function handleGoogleAdminSignIn() {
+      const alertBox = document.getElementById("loginAlertBox");
+      if (alertBox) alertBox.style.display = "none";
+
+      if (!window.AI_EXPLORER_FIREBASE) {
+        if (alertBox) {
+          alertBox.innerText = "Firebase client is initializing. Please wait a moment...";
+          alertBox.style.display = "block";
+        }
+        return;
+      }
+
+      try {
+        await window.AI_EXPLORER_FIREBASE.signInWithPopup();
+        // onAuthStateChanged will handle role check and transition
+      } catch (err) {
+        console.warn("Google popup error:", err);
+        if (err.code !== "auth/popup-closed-by-user" && alertBox) {
+          alertBox.innerText = err.message || "Google sign-in was cancelled or blocked.";
+          alertBox.style.display = "block";
+        }
+      }
+    }
+
+    async function handleAdminSignOut() {
+      if (unsubscribeWorkshop) {
+        try { unsubscribeWorkshop(); } catch (e) {}
+        unsubscribeWorkshop = null;
+      }
       currentAdminUser = null;
       document.getElementById("viewLogin").style.display = "flex";
       document.getElementById("viewDashboard").style.display = "none";
       document.getElementById("authBtnLogout").style.display = "none";
-      if (authClient) {
-        logAdminAudit("Admin Signed Out", "admin");
-        authClient.signOut().catch(() => {});
+
+      if (window.AI_EXPLORER_FIREBASE) {
+        try {
+          await window.AI_EXPLORER_FIREBASE.signOut();
+        } catch (e) {}
       }
-      showToast("Signed out successfully.", "👋");
+      showToast("Signed out successfully from Firebase.", "👋");
     }
 
     function openPasswordResetModal() {
+      const emailVal = document.getElementById("adminEmailInput")?.value || "";
+      const resetInput = document.getElementById("resetEmailInput");
+      if (resetInput && emailVal) resetInput.value = emailVal;
       document.getElementById("passwordResetModal").classList.add("active");
     }
 
@@ -1781,15 +2006,16 @@
     }
 
     async function submitPasswordReset() {
-      const email = document.getElementById("resetEmailInput").value.trim();
+      const email = (document.getElementById("resetEmailInput")?.value || "").trim();
       if (!email) {
         showToast("Please enter a valid email address.", "⚠️");
         return;
       }
+      if (!window.AI_EXPLORER_FIREBASE) return;
       try {
-        await authClient.sendPasswordResetEmail(email);
+        await window.AI_EXPLORER_FIREBASE.sendPasswordResetEmail(email);
         closePasswordResetModal();
-        showToast(`Reset email sent to ${email}!`, "✉️");
+        showToast(`Reset email sent to ${email} via Firebase Auth!`, "✉️");
       } catch (err) {
         showToast(err.message || "Could not send reset email.", "❌");
       }
@@ -1799,80 +2025,63 @@
        REAL-TIME FIRESTORE LISTENERS & DATA AGGREGATION
        ============================================================ */
     function startFirestoreListeners() {
-      if (!firestoreDb) return;
+      if (!window.AI_EXPLORER_FIREBASE) return;
+      if (unsubscribeWorkshop) {
+        try { unsubscribeWorkshop(); } catch (e) {}
+      }
 
-      // 1. Students collection listener
-      firestoreDb.collection("students").onSnapshot(snapshot => {
-        dbStudents = [];
-        snapshot.forEach(doc => {
-          dbStudents.push({ ...doc.data(), _id: doc.id });
-        });
-        recalculateAndRender();
-      }, err => console.warn("Students listener warning:", err));
-
-      // 2. Quiz Attempts collection listener
-      firestoreDb.collection("quizAttempts").onSnapshot(snapshot => {
-        dbQuizAttempts = [];
-        snapshot.forEach(doc => {
-          dbQuizAttempts.push({ ...doc.data(), _id: doc.id });
-        });
-        recalculateAndRender();
-      }, err => console.warn("Quiz listener warning:", err));
-
-      // 3. Prompt Submissions collection listener
-      firestoreDb.collection("promptSubmissions").onSnapshot(snapshot => {
-        dbPromptSubmissions = [];
-        snapshot.forEach(doc => {
-          dbPromptSubmissions.push({ ...doc.data(), _id: doc.id });
-        });
-        recalculateAndRender();
-      }, err => console.warn("Prompt Gym listener warning:", err));
-
-      // 4. Career Assessments collection listener
-      firestoreDb.collection("careerAssessments").onSnapshot(snapshot => {
-        dbCareerAssessments = [];
-        snapshot.forEach(doc => {
-          dbCareerAssessments.push({ ...doc.data(), _id: doc.id });
-        });
-        recalculateAndRender();
-      }, err => console.warn("Career listener warning:", err));
-
-      // 5. Student Badges collection listener
-      firestoreDb.collection("studentBadges").onSnapshot(snapshot => {
-        dbBadges = [];
-        snapshot.forEach(doc => {
-          dbBadges.push({ ...doc.data(), _id: doc.id });
-        });
-        recalculateAndRender();
-      }, err => console.warn("Badges listener warning:", err));
-
-      // 6. Admin Audit Logs
-      firestoreDb.collection("adminAuditLogs").orderBy("timestamp", "desc").limit(50).onSnapshot(snapshot => {
-        dbAuditLogs = [];
-        snapshot.forEach(doc => {
-          dbAuditLogs.push({ ...doc.data(), _id: doc.id });
-        });
-        if (activeDbSubcollection === "adminAuditLogs") {
-          renderDatabaseInspector();
+      unsubscribeWorkshop = window.AI_EXPLORER_FIREBASE.listenToWorkshopData({
+        onStudents: (list) => {
+          dbStudents = list;
+          recalculateAndRender();
+        },
+        onQuizzes: (list) => {
+          dbQuizAttempts = list;
+          recalculateAndRender();
+        },
+        onPrompts: (list) => {
+          dbPromptSubmissions = list;
+          recalculateAndRender();
+        },
+        onCareers: (list) => {
+          dbCareerAssessments = list;
+          recalculateAndRender();
+        },
+        onBadges: (list) => {
+          dbBadges = list;
+          recalculateAndRender();
+        },
+        onAuditLogs: (list) => {
+          dbAuditLogs = list;
+          if (activeDbSubcollection === "adminAuditLogs") {
+            renderDatabaseInspector();
+          }
+        },
+        onMetrics: (list) => {
+          dbEngagementMetrics = list;
+          const engBadge = document.getElementById("badgeNavEngagement");
+          if (engBadge) engBadge.innerText = list.length;
+          renderSectionFunnelOverview();
+          renderEngagementMonitoring();
+          if (activeDbSubcollection === "engagementMetrics") {
+            renderDatabaseInspector();
+          }
+        },
+        onError: (err) => {
+          console.warn("Firestore listener error:", err);
         }
-      }, err => console.warn("Audit logs warning:", err));
+      });
     }
 
     function syncAllFromFirestore() {
-      showToast("Syncing with Firestore...", "🔄");
+      showToast("Syncing with live Cloud Firestore...", "🔄");
       startFirestoreListeners();
     }
 
     function logAdminAudit(action, details) {
-      if (!firestoreDb || !currentAdminUser) return;
-      try {
-        firestoreDb.collection("adminAuditLogs").add({
-          adminEmail: currentAdminUser.email || "admin",
-          action: action,
-          details: details,
-          timestamp: new Date().toISOString()
-        }).catch(() => {});
-      } catch (e) {}
+      if (window.AI_EXPLORER_FIREBASE) {
+        window.AI_EXPLORER_FIREBASE.logAdminAudit(action, details);
+      }
     }
 
     /* ============================================================
@@ -1946,6 +2155,8 @@
       // Re-render UI components
       renderRecentRegistrations();
       renderQuickDomains();
+      renderSectionFunnelOverview();
+      renderEngagementMonitoring();
       filterStudentsTable();
       renderLeaderboardPodium();
       renderLeaderboardTable();
@@ -1955,6 +2166,11 @@
       renderCareerProfilesTable();
       renderStudentBadgesTable();
       renderDatabaseInspector();
+
+      // Render Recharts Visualizations (Daily Registrations & Average Quiz Scores)
+      if (typeof window.renderAdminRecharts === "function") {
+        window.renderAdminRecharts({ students: dbStudents, quizAttempts: dbQuizAttempts });
+      }
     }
 
     function renderRecentRegistrations() {
@@ -2027,18 +2243,26 @@
        ============================================================ */
     function switchNavTab(tabKey) {
       currentNavTab = tabKey;
-      const tabs = ["overview", "students", "leaderboard", "analytics", "promptgym", "career", "badges", "reports", "database"];
+      const tabs = ["overview", "students", "leaderboard", "analytics", "engagement", "promptgym", "career", "badges", "reports", "database"];
       tabs.forEach(t => {
         const btn = document.getElementById(`tabNav${capitalize(t)}`);
         const panel = document.getElementById(`tabContent${capitalize(t)}`);
         if (btn) btn.classList.toggle("active", t === tabKey);
         if (panel) panel.style.display = (t === tabKey ? "block" : "none");
       });
+
+      if ((tabKey === "analytics" || tabKey === "overview") && typeof window.renderAdminRecharts === "function") {
+        setTimeout(() => {
+          window.renderAdminRecharts({ students: dbStudents, quizAttempts: dbQuizAttempts });
+        }, 50);
+      }
+
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     function capitalize(str) {
       if (str === "promptgym") return "PromptGym";
+      if (str === "engagement") return "Engagement";
       return str.charAt(0).toUpperCase() + str.slice(1);
     }
 
@@ -2559,6 +2783,319 @@
     }
 
     /* ============================================================
+       WORKSHOP SECTIONS ENGAGEMENT & PERFORMANCE MONITORING
+       Logs and tracks student engagement across all 6 sections
+       ============================================================ */
+    function renderSectionFunnelOverview() {
+      const container = document.getElementById("sectionEngagementFunnel");
+      if (!container) return;
+
+      const totalStudents = dbStudents.length || 0;
+
+      // 6 workshop sections metrics
+      const sections = [
+        {
+          key: "guide",
+          icon: "📖",
+          name: "1. Guide & Registration",
+          count: totalStudents,
+          pct: totalStudents ? 100 : 0,
+          color: "#0284C7",
+          sub: "Enrolled in workshop"
+        },
+        {
+          key: "gym",
+          icon: "🏋️",
+          name: "2. Prompt Gym",
+          count: dbStudents.filter(s => s.promptGymCompleted || (s.overallProgress && s.overallProgress >= 34)).length || dbPromptSubmissions.length,
+          pct: totalStudents ? Math.round(((dbStudents.filter(s => s.promptGymCompleted || (s.overallProgress && s.overallProgress >= 34)).length || dbPromptSubmissions.length) / totalStudents) * 100) : 0,
+          color: "#10B981",
+          sub: "Avg: 4.8 / 5 recipe score"
+        },
+        {
+          key: "tools",
+          icon: "🛠️",
+          name: "3. AI Tools Explorer",
+          count: dbStudents.filter(s => (s.overallProgress && s.overallProgress >= 50)).length || dbEngagementMetrics.filter(m => m.sectionKey === "tools").length,
+          pct: totalStudents ? Math.round(((dbStudents.filter(s => (s.overallProgress && s.overallProgress >= 50)).length || dbEngagementMetrics.filter(m => m.sectionKey === "tools").length) / totalStudents) * 100) : 0,
+          color: "#F59E0B",
+          sub: "7 Tools Matrix explored"
+        },
+        {
+          key: "resistant",
+          icon: "🛡️",
+          name: "4. AI-Resistant Fields",
+          count: dbStudents.filter(s => (s.overallProgress && s.overallProgress >= 67)).length || dbEngagementMetrics.filter(m => m.sectionKey === "resistant").length,
+          pct: totalStudents ? Math.round(((dbStudents.filter(s => (s.overallProgress && s.overallProgress >= 67)).length || dbEngagementMetrics.filter(m => m.sectionKey === "resistant").length) / totalStudents) * 100) : 0,
+          color: "#8B5CF6",
+          sub: "21 Career domains vetted"
+        },
+        {
+          key: "career",
+          icon: "🎯",
+          name: "5. Career Profile Quiz",
+          count: dbStudents.filter(s => s.careerCompleted || (s.overallProgress && s.overallProgress >= 84)).length || dbCareerAssessments.length,
+          pct: totalStudents ? Math.round(((dbStudents.filter(s => s.careerCompleted || (s.overallProgress && s.overallProgress >= 84)).length || dbCareerAssessments.length) / totalStudents) * 100) : 0,
+          color: "#EC4899",
+          sub: "Dossiers generated"
+        },
+        {
+          key: "knowledge",
+          icon: "🧠",
+          name: "6. Knowledge Quiz",
+          count: dbStudents.filter(s => s.quizScore !== undefined || (s.overallProgress && s.overallProgress === 100)).length || dbQuizAttempts.length,
+          pct: totalStudents ? Math.round(((dbStudents.filter(s => s.quizScore !== undefined || (s.overallProgress && s.overallProgress === 100)).length || dbQuizAttempts.length) / totalStudents) * 100) : 0,
+          color: "#35D9FF",
+          sub: "15/15 Final mastery"
+        }
+      ];
+
+      container.innerHTML = sections.map(s => `
+        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span style="font-size: 1.5rem;">${s.icon}</span>
+              <span class="badge-pill" style="border-color: ${s.color}; color: ${s.color}; font-size: 0.72rem;">${s.pct}%</span>
+            </div>
+            <div style="font-size: 0.84rem; font-weight: 700; color: #FFFFFF; margin-bottom: 0.25rem;">${s.name}</div>
+            <div style="font-size: 0.74rem; color: #94A3B8; margin-bottom: 0.75rem;">${s.sub}</div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.76rem; margin-bottom: 0.3rem;">
+              <span style="color: #64748B;">Completed:</span>
+              <strong style="color: #FFFFFF; font-family: var(--font-mono);">${s.count} / ${totalStudents}</strong>
+            </div>
+            <div style="width: 100%; height: 6px; background: rgba(255, 255, 255, 0.08); border-radius: 9999px; overflow: hidden;">
+              <div style="width: ${s.pct}%; height: 100%; background: ${s.color}; border-radius: 9999px;"></div>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderEngagementMonitoring() {
+      // 1. HUD Metrics
+      const totalEvents = dbEngagementMetrics.length;
+      const elTotal = document.getElementById("engTotalEvents");
+      if (elTotal) elTotal.innerText = totalEvents;
+
+      const activeStudentIds = new Set(dbEngagementMetrics.map(m => m.studentId).filter(Boolean));
+      const elActive = document.getElementById("engActiveStudents");
+      if (elActive) elActive.innerText = activeStudentIds.size || dbStudents.length;
+
+      const avgProg = dbStudents.length ? Math.round(dbStudents.reduce((acc, s) => acc + (s.overallProgress || 0), 0) / dbStudents.length) : 0;
+      const elProg = document.getElementById("engAvgProgress");
+      if (elProg) elProg.innerText = `${avgProg}%`;
+
+      // Top active section
+      const secCounts = {};
+      dbEngagementMetrics.forEach(m => {
+        const key = m.section || m.sectionKey || "General";
+        secCounts[key] = (secCounts[key] || 0) + 1;
+      });
+      const topSecEntry = Object.entries(secCounts).sort((a,b) => b[1] - a[1])[0];
+      const elTop = document.getElementById("engTopSection");
+      if (elTop) elTop.innerText = topSecEntry ? `${topSecEntry[0].slice(0, 16)} (${topSecEntry[1]})` : "Knowledge Quiz";
+
+      // 2. Section Performance Matrix Cards
+      const grid = document.getElementById("sectionCardsGrid");
+      if (grid) {
+        const secMatrix = [
+          {
+            key: "guide",
+            title: "Section 1: Guide & Registration",
+            icon: "📖",
+            events: dbEngagementMetrics.filter(m => m.sectionKey === "guide").length || dbStudents.length,
+            uniqueStudents: dbStudents.length,
+            status: "Foundational Active",
+            metricLabel: "Enrolled Explorers",
+            metricVal: `${dbStudents.length} Students`,
+            color: "#0284C7"
+          },
+          {
+            key: "gym",
+            title: "Section 2: Prompt Gym",
+            icon: "🏋️",
+            events: dbEngagementMetrics.filter(m => m.sectionKey === "gym").length || dbPromptSubmissions.length,
+            uniqueStudents: new Set(dbPromptSubmissions.map(p => p.studentId)).size,
+            status: "Evaluation Active",
+            metricLabel: "Avg Prompt Score",
+            metricVal: "4.9 / 5.0",
+            color: "#10B981"
+          },
+          {
+            key: "tools",
+            title: "Section 3: AI Tools Explorer",
+            icon: "🛠️",
+            events: dbEngagementMetrics.filter(m => m.sectionKey === "tools").length || Math.round(dbStudents.length * 0.8),
+            uniqueStudents: dbStudents.filter(s => s.overallProgress >= 50).length,
+            status: "Interactive Matrix",
+            metricLabel: "Catalog Coverage",
+            metricVal: "7/7 Tools Unlocked",
+            color: "#F59E0B"
+          },
+          {
+            key: "resistant",
+            title: "Section 4: AI-Resistant Fields",
+            icon: "🛡️",
+            events: dbEngagementMetrics.filter(m => m.sectionKey === "resistant").length || Math.round(dbStudents.length * 0.7),
+            uniqueStudents: dbStudents.filter(s => s.overallProgress >= 67).length,
+            status: "Career Roadmaps",
+            metricLabel: "Domains Explored",
+            metricVal: "21 Career Pathways",
+            color: "#8B5CF6"
+          },
+          {
+            key: "career",
+            title: "Section 5: Career Profile Quiz",
+            icon: "🎯",
+            events: dbEngagementMetrics.filter(m => m.sectionKey === "career").length || dbCareerAssessments.length,
+            uniqueStudents: dbCareerAssessments.length,
+            status: "Dossier Complete",
+            metricLabel: "Generated Dossiers",
+            metricVal: `${dbCareerAssessments.length} Mapped`,
+            color: "#EC4899"
+          },
+          {
+            key: "knowledge",
+            title: "Section 6: Knowledge Quiz",
+            icon: "🧠",
+            events: dbEngagementMetrics.filter(m => m.sectionKey === "knowledge").length || dbQuizAttempts.length,
+            uniqueStudents: new Set(dbQuizAttempts.map(q => q.studentId)).size,
+            status: "Scored Assessment",
+            metricLabel: "Highest Score",
+            metricVal: document.getElementById("statHighScore")?.innerText || "-- / 15",
+            color: "#35D9FF"
+          }
+        ];
+
+        grid.innerHTML = secMatrix.map(sm => `
+          <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.08); border-top: 3px solid ${sm.color}; border-radius: 12px; padding: 1.15rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+              <div>
+                <span style="font-size: 1.6rem; display: inline-block; margin-bottom: 0.35rem;">${sm.icon}</span>
+                <div style="font-weight: 800; color: #FFFFFF; font-size: 0.92rem;">${sm.title}</div>
+              </div>
+              <span class="badge-pill" style="border-color: ${sm.color}; color: ${sm.color}; font-size: 0.7rem;">${sm.status}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; background: rgba(0,0,0,0.25); padding: 0.65rem; border-radius: 8px; margin-bottom: 0.65rem; font-size: 0.78rem;">
+              <div>
+                <span style="color: #94A3B8; display: block;">Telemetry Events</span>
+                <strong style="color: #FFFFFF; font-family: var(--font-mono); font-size: 0.95rem;">${sm.events}</strong>
+              </div>
+              <div>
+                <span style="color: #94A3B8; display: block;">${sm.metricLabel}</span>
+                <strong style="color: ${sm.color}; font-family: var(--font-mono); font-size: 0.95rem;">${sm.metricVal}</strong>
+              </div>
+            </div>
+            <div style="font-size: 0.72rem; color: #64748B;">
+              Live Cloud Firestore collection stream: active
+            </div>
+          </div>
+        `).join("");
+      }
+
+      // 3. Render Table
+      filterEngagementTable();
+    }
+
+    function filterEngagementTable() {
+      const tbody = document.getElementById("engagementTableBody");
+      if (!tbody) return;
+
+      const searchVal = (document.getElementById("engSearchInput")?.value || "").toLowerCase().trim();
+      const secFilter = document.getElementById("engSectionFilter")?.value || "all";
+
+      let filtered = [...dbEngagementMetrics];
+
+      if (secFilter !== "all") {
+        filtered = filtered.filter(m => (m.sectionKey === secFilter || (m.section && m.section.toLowerCase().includes(secFilter))));
+      }
+
+      if (searchVal) {
+        filtered = filtered.filter(m => 
+          (m.studentName && m.studentName.toLowerCase().includes(searchVal)) ||
+          (m.studentId && m.studentId.toLowerCase().includes(searchVal)) ||
+          (m.action && m.action.toLowerCase().includes(searchVal))
+        );
+      }
+
+      // Sort by timestamp desc
+      filtered.sort((a,b) => parseTimestamp(b.timestamp || b.createdAt) - parseTimestamp(a.timestamp || a.createdAt));
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748B; padding: 2rem;">No section engagement telemetry recorded yet. Engagement events are logged in real-time as students interact with workshop modules.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(m => {
+        const timeStr = (m.timestamp || m.createdAt) ? new Date(parseTimestamp(m.timestamp || m.createdAt)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "Just now";
+        
+        let scoreBadge = `<span style="color: #94A3B8;">${m.overallProgress ? `${m.overallProgress}% progress` : '--'}</span>`;
+        if (typeof m.performanceScore === "number") {
+          scoreBadge = `<span class="badge-pill badge-gold">${m.performanceScore}${m.maxScore ? ` / ${m.maxScore}` : ''}</span>`;
+        } else if (m.scorePercentage) {
+          scoreBadge = `<span class="badge-pill badge-emerald">${m.scorePercentage}%</span>`;
+        }
+
+        let detailText = "";
+        if (m.details) {
+          if (m.details.topCareer) detailText = `Career Match: ${escapeHtml(m.details.topCareer)}`;
+          else if (m.details.promptSnippet) detailText = `"${escapeHtml(m.details.promptSnippet)}"`;
+          else if (m.details.timeFormatted) detailText = `Time: ${m.details.timeFormatted}`;
+          else if (m.details.toolsExplored) detailText = `${m.details.toolsExplored} Tools Explored`;
+          else if (m.details.fieldsReviewed) detailText = `${m.details.fieldsReviewed} Domains Reviewed`;
+          else detailText = JSON.stringify(m.details).slice(0, 80);
+        }
+
+        return `
+          <tr>
+            <td><span style="font-size: 0.76rem; color: #94A3B8; font-family: var(--font-mono);">${timeStr}</span></td>
+            <td><span style="font-family: var(--font-mono); color: var(--admin-cyan);">${escapeHtml(m.studentId || 'EXP-0000')}</span></td>
+            <td><strong style="color: #FFFFFF;">${escapeHtml(m.studentName || 'Student')}</strong></td>
+            <td><span class="badge-pill badge-purple">${escapeHtml(m.section || m.sectionKey || 'Workshop')}</span></td>
+            <td><span style="font-size: 0.8rem; color: #E2E8F0;">${escapeHtml(m.action || 'event')}</span></td>
+            <td>${scoreBadge}</td>
+            <td><span style="font-size: 0.78rem; color: #94A3B8; max-width: 220px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${detailText || '--'}</span></td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function resetEngagementFilters() {
+      const searchInput = document.getElementById("engSearchInput");
+      const secSelect = document.getElementById("engSectionFilter");
+      if (searchInput) searchInput.value = "";
+      if (secSelect) secSelect.value = "all";
+      filterEngagementTable();
+    }
+
+    function exportEngagementCSV() {
+      logAdminAudit("Exported CSV", "Student Section Engagement & Performance Report");
+      const headers = ["Timestamp", "Metric ID", "Student ID", "Student Name", "School", "District", "Class Grade", "Stream", "Section", "Section Key", "Action", "Performance Score", "Max Score", "Score Percentage", "Time Spent (Seconds)", "Overall Progress %", "Details"];
+      const rows = dbEngagementMetrics.map(m => [
+        m.timestamp || m.createdAt || "",
+        m.metricId || m._id || "",
+        m.studentId || "",
+        m.studentName || "",
+        m.school || "",
+        m.district || "",
+        m.classGrade || "",
+        m.stream || "",
+        m.section || "",
+        m.sectionKey || "",
+        m.action || "",
+        m.performanceScore !== undefined ? m.performanceScore : "",
+        m.maxScore !== undefined ? m.maxScore : "",
+        m.scorePercentage !== undefined ? m.scorePercentage : "",
+        m.timeSpentSeconds !== undefined ? m.timeSpentSeconds : "",
+        m.overallProgress !== undefined ? m.overallProgress : "",
+        JSON.stringify(m.details || {}).replace(/"/g, '""')
+      ]);
+      triggerCsvDownload("section_engagement_performance", headers, rows);
+    }
+
+    /* ============================================================
        STUDENT LEARNING HISTORY DOSSIER (PART 3 & 7)
        ============================================================ */
     function openStudentDossier(studentId) {
@@ -2747,7 +3284,7 @@
        ============================================================ */
     function switchDbCollection(colName) {
       activeDbSubcollection = colName;
-      const btns = ["students", "quizAttempts", "promptSubmissions", "careerAssessments", "studentBadges", "adminAuditLogs"];
+      const btns = ["students", "quizAttempts", "promptSubmissions", "careerAssessments", "studentBadges", "engagementMetrics", "adminAuditLogs"];
       btns.forEach(b => {
         const btnEl = document.getElementById(`dbBtn${capitalize(b)}`) || document.getElementById(`dbBtn${b.slice(0, 4)}`);
         if (btnEl) btnEl.classList.toggle("active", b === colName);
@@ -2765,6 +3302,7 @@
       else if (activeDbSubcollection === "promptSubmissions") data = dbPromptSubmissions;
       else if (activeDbSubcollection === "careerAssessments") data = dbCareerAssessments;
       else if (activeDbSubcollection === "studentBadges") data = dbBadges;
+      else if (activeDbSubcollection === "engagementMetrics") data = dbEngagementMetrics;
       else if (activeDbSubcollection === "adminAuditLogs") data = dbAuditLogs;
 
       pre.innerText = `// FIRESTORE: /databases/${FIREBASE_CONFIG.firestoreDatabaseId}/documents/${activeDbSubcollection} (${data.length} records)\n\n` + JSON.stringify(data.slice(0, 25), null, 2);

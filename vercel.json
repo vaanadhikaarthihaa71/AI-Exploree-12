@@ -1,14 +1,13 @@
 {
   "buildCommand": "vite build",
-  "installCommand": "npm install --legacy-peer-deps",
   "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/admin", "destination": "/admin/index.html" },
-    { "source": "/admin/", "destination": "/admin/index.html" },
-    { "source": "/admin.html", "destination": "/admin/index.html" },
-    { "source": "/admin/:match*", "destination": "/admin/index.html" },
-    { "source": "/api/:match*", "destination": "/api/:match*" }
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/admin/", "destination": "/admin.html" },
+    { "source": "/admin/(.*)", "destination": "/admin.html" },
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/((?!admin|admin\\.html|assets|public|.*\\..*).*)", "destination": "/index.html" }
   ]
 }

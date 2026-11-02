@@ -125,6 +125,30 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["email", "role"]
+    },
+    "engagementMetrics": {
+      "type": "object",
+      "description": "Granular student performance and engagement telemetry logged across workshop sections",
+      "properties": {
+        "metricId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "school": { "type": "string" },
+        "district": { "type": "string" },
+        "classGrade": { "type": "string" },
+        "stream": { "type": "string" },
+        "section": { "type": "string", "description": "Workshop section display name" },
+        "sectionKey": { "type": "string", "description": "Section key e.g. guide, gym, tools, resistant, career, knowledge" },
+        "action": { "type": "string", "description": "Interaction or milestone action type" },
+        "performanceScore": { "type": "number", "description": "Score achieved in this section if applicable" },
+        "maxScore": { "type": "number", "description": "Max score possible" },
+        "scorePercentage": { "type": "number", "description": "Normalized percentage" },
+        "timeSpentSeconds": { "type": "number", "description": "Time elapsed or spent on task" },
+        "overallProgress": { "type": "number", "description": "Workshop progress percentage" },
+        "details": { "type": "object", "description": "Section-specific telemetry data" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "sectionKey", "action", "timestamp"]
     }
   }
 }

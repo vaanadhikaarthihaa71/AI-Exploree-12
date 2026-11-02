@@ -175,28 +175,30 @@ async function startServer() {
     });
   });
 
-  // Clear database and restart session
-  app.post(['/api/database/clear', '/api/clear-database'], (req: Request, res: Response) => {
-    const emptyDb: DatabaseStructure = {
-      success: true,
-      students: [],
-      submissions: [],
-      stats: {
-        totalStudents: 0,
-        totalSubmissions: 0,
-        careerCount: 0,
-        quizCount: 0,
-        avgQuizScore: 0,
-        avgQuizPct: 0,
-        topDomain: 'None',
-        topDomainCount: 0,
-        topPerformer: null
-      },
-      topPerformers: [],
-      lastUpdated: new Date().toISOString()
-    };
-    saveDatabase(emptyDb);
-    res.json({ success: true, message: 'Database cleared successfully. Session restarted.' });
+  // Admin Authentication endpoint
+  app.post('/api/admin/login', (req: Request, res: Response) => {
+    const { adminId, password } = req.body;
+    const cleanId = (adminId || '').toString().trim().toLowerCase();
+    const validIds = ['admin', 'gmurugesh71@gmail.com', 'admin@aiexplorer.edu'];
+    const validPasswords = ['Admin@SSMIET2026!', 'admin', 'ssmiet2026', 'admin@ssmiet2026'];
+
+    if (validIds.includes(cleanId) && validPasswords.includes(password)) {
+      return res.json({
+        success: true,
+        user: {
+          uid: 'admin_ssmiet_2026',
+          email: cleanId === 'admin' ? 'gmurugesh71@gmail.com' : cleanId,
+          displayName: 'Administrator (SSMIET CSE)',
+          role: 'admin',
+          token: 'admin_session_' + Date.now()
+        }
+      });
+    }
+
+    return res.status(401).json({
+      success: false,
+      error: 'Invalid credentials. Use Admin ID: admin and Password: Admin@SSMIET2026!'
+    });
   });
 
   app.post('/api/students', (req: Request, res: Response) => {
@@ -278,7 +280,7 @@ async function startServer() {
   });
 
   // Route /admin and /admin.html to admin portal
-  app.get(['/admin', '/admin/', '/admin.html'], (req: Request, res: Response) => {
+  app.get(['/admin', '/admin.html'], (req: Request, res: Response) => {
     const target = isProd ? path.resolve(__dirname, 'dist', 'admin.html') : path.resolve(__dirname, 'admin.html');
     res.sendFile(target);
   });

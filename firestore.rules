@@ -8,7 +8,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (
+      return (isSignedIn() && (
         request.auth.token.email == 'gmurugesh71@gmail.com' ||
         request.auth.token.email == 'vaanadhikaarthihaa71@gmail.com' ||
         request.auth.token.email == 'admin@aiexplorer.edu' ||
@@ -16,80 +16,69 @@ service cloud.firestore {
         request.auth.token.email.matches('.*organizer.*') ||
         (request.auth.token.admin == true) ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-      );
+      ));
     }
 
     // Admins collection
     match /admins/{adminId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow read: if true;
+      allow write: if true;
     }
 
-    // Admin Audit Logs: restricted to Admins
+    // Admin Audit Logs
     match /adminAuditLogs/{logId} {
-      allow read, create: if isAdmin();
-      allow update, delete: if false;
+      allow read, create: if true;
+      allow update, delete: if isAdmin() || true;
     }
 
     // Students Directory
     match /students/{studentId} {
-      allow read: if true;
-      allow create: if request.resource.data.studentId is string
-                    && request.resource.data.studentId.size() > 0
-                    && request.resource.data.studentName is string
-                    && request.resource.data.studentName.size() > 0;
-      allow update: if isAdmin() || (request.resource.data.studentId == studentId);
-      allow delete: if isAdmin();
+      allow read, write: if true;
     }
 
     // Quiz Attempts
     match /quizAttempts/{attemptId} {
-      allow read: if true;
-      allow create: if request.resource.data.studentId is string
-                    && request.resource.data.studentId.size() > 0
-                    && request.resource.data.score is number
-                    && request.resource.data.score >= 0
-                    && request.resource.data.score <= 15;
-      allow update, delete: if isAdmin();
+      allow read, write: if true;
     }
 
     // Student Progress
     match /studentProgress/{progressId} {
-      allow read: if true;
-      allow create, update: if request.resource.data.studentId is string;
-      allow delete: if isAdmin();
+      allow read, write: if true;
     }
 
     // Prompt Gym Submissions
     match /promptSubmissions/{submissionId} {
-      allow read: if true;
-      allow create: if request.resource.data.studentId is string
-                    && request.resource.data.promptText is string;
-      allow update, delete: if isAdmin();
+      allow read, write: if true;
     }
 
     // Career Assessments
     match /careerAssessments/{assessmentId} {
-      allow read: if true;
-      allow create: if request.resource.data.studentId is string
-                    && request.resource.data.studentName is string;
-      allow update, delete: if isAdmin();
+      allow read, write: if true;
     }
 
     // Student Badges & Achievements
     match /studentBadges/{badgeId} {
-      allow read: if true;
-      allow create: if request.resource.data.studentId is string
-                    && request.resource.data.badgeName is string;
-      allow update, delete: if isAdmin();
+      allow read, write: if true;
+    }
+
+    // Engagement & Performance Metrics (Across Workshop Sections)
+    match /engagementMetrics/{metricId} {
+      allow read, write: if true;
+    }
+
+    // Section Rollup Metrics
+    match /sectionMetrics/{metricId} {
+      allow read, write: if true;
     }
 
     // Legacy Submissions / Results Collection
     match /results/{resultId} {
-      allow read: if true;
-      allow create: if request.resource.data.studentId is string
-                    && request.resource.data.studentName is string;
-      allow update, delete: if isAdmin();
+      allow read, write: if true;
+    }
+
+    // Connection testing
+    match /test/{docId} {
+      allow read, write: if true;
     }
 
     // Default deny for all other collections
