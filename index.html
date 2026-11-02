@@ -4430,6 +4430,47 @@
       setGlobalLanguage(STATE.language || "en", true);
       initKnowledgeQuiz();
       updateProgressDisplay();
+
+      // Listen for session reset from Admin Portal
+      if (typeof BroadcastChannel !== "undefined") {
+        try {
+          const bc = new BroadcastChannel("ai_explorer_db_sync");
+          bc.onmessage = (event) => {
+            if (event.data?.type === "session_reset") {
+              const studentKeys = [
+                "ai_explorer_offline_results",
+                "ai_explorer_completed",
+                "ai_explorer_name",
+                "ai_explorer_id",
+                "ai_explorer_max_tool",
+                "ai_explorer_resistant_cards",
+                "ai_explorer_degree_fields"
+              ];
+              studentKeys.forEach(k => {
+                try { localStorage.removeItem(k); } catch (e) {}
+              });
+              STATE.studentName = null;
+              STATE.studentId = null;
+              STATE.completedSections.clear();
+              STATE.openedResistantCards.clear();
+              STATE.openedDegreeFields = new Set(["cse"]);
+              STATE.maxUnlockedTool = 0;
+              STATE.unlockedToolIndex = 0;
+              STATE.careerScenarioAnswers.fill(null);
+              STATE.currentCareerScenarioIndex = 0;
+              STATE.careerResults = null;
+              STATE.knowledgeAnswers.fill(null);
+              STATE.currentKnowledgeIndex = 0;
+              STATE.knowledgeResults = null;
+
+              const nameInput = document.getElementById("studentNameInput");
+              if (nameInput) nameInput.value = "";
+              updateProgressDisplay();
+              showToast("New workshop session started by Admin! Please enter your name to register ⚡");
+            }
+          };
+        } catch (e) {}
+      }
     });
 
     function initTheme() {

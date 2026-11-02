@@ -7,6 +7,7 @@ import {
   getDoc,
   getDocs,
   addDoc,
+  writeBatch,
   onSnapshot,
   serverTimestamp,
   query,
@@ -37,6 +38,7 @@ export const auth = getAuth(app);
 // Authorized admin emails list (Project owner + institutional administrators)
 export const AUTHORIZED_ADMIN_EMAILS = [
   "gmurugesh71@gmail.com",
+  "vaanadhikaarthihaa71@gmail.com",
   "admin@aiexplorer.edu",
   "admin@ssmiet.ac.in",
   "hodcse@ssmiet.ac.in"
@@ -533,6 +535,123 @@ export async function logAdminAudit(action: string, details: string) {
   }
 }
 
+// Clear all workshop session data across Cloud Firestore collections
+export async function clearWorkshopSessionData(options?: {
+  clearLocalStorage?: boolean;
+  clearServerDatabase?: boolean;
+}): Promise<{
+  success: boolean;
+  totalDeleted: number;
+  collectionCounts: Record<string, number>;
+  message: string;
+}> {
+  const targetCollections = [
+    "students",
+    "quizAttempts",
+    "promptSubmissions",
+    "careerAssessments",
+    "studentBadges",
+    "studentProgress",
+    "engagementMetrics",
+    "sectionMetrics",
+    "results",
+    "test"
+  ];
+
+  const collectionCounts: Record<string, number> = {};
+  let totalDeleted = 0;
+
+  for (const colName of targetCollections) {
+    try {
+      const colRef = collection(db, colName);
+      const snapshot = await getDocs(colRef);
+      const docs = snapshot.docs;
+      collectionCounts[colName] = docs.length;
+
+      if (docs.length === 0) continue;
+
+      // Batch delete in chunks of 400 (Firestore maximum batch size is 500)
+      const chunkSize = 400;
+      for (let i = 0; i < docs.length; i += chunkSize) {
+        const chunk = docs.slice(i, i + chunkSize);
+        const batch = writeBatch(db);
+        chunk.forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+      }
+
+      totalDeleted += docs.length;
+    } catch (err) {
+      console.error(`Error clearing collection ${colName}:`, err);
+      collectionCounts[colName] = 0;
+    }
+  }
+
+  // Clear local server database.json via server API if available
+  if (options?.clearServerDatabase !== false) {
+    try {
+      await fetch("/api/admin/clear-database", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clearedBy: auth.currentUser?.email || "admin",
+          timestamp: new Date().toISOString()
+        })
+      });
+    } catch (e) {
+      console.warn("Could not clear local server database:", e);
+    }
+  }
+
+  // Broadcast session reset event to all connected browser tabs & student clients
+  try {
+    if (typeof BroadcastChannel !== "undefined") {
+      const bc = new BroadcastChannel("ai_explorer_db_sync");
+      bc.postMessage({
+        type: "session_reset",
+        clearedAt: new Date().toISOString(),
+        clearedBy: auth.currentUser?.email || "admin"
+      });
+      bc.close();
+    }
+  } catch (e) {}
+
+  // Clear student local storage keys in this window
+  if (options?.clearLocalStorage !== false && typeof window !== "undefined") {
+    try {
+      const studentKeys = [
+        "ai_explorer_offline_results",
+        "ai_explorer_completed",
+        "ai_explorer_name",
+        "ai_explorer_id",
+        "ai_explorer_max_tool",
+        "ai_explorer_resistant_cards",
+        "ai_explorer_degree_fields"
+      ];
+      studentKeys.forEach((k) => {
+        try {
+          localStorage.removeItem(k);
+        } catch (_) {}
+      });
+    } catch (e) {}
+  }
+
+  // Record audit log entry in adminAuditLogs
+  await logAdminAudit(
+    "Clear Database / Reset Workshop Session",
+    `Cleared ${totalDeleted} documents across workshop collections (${Object.entries(collectionCounts)
+      .filter(([_, c]) => c > 0)
+      .map(([k, c]) => `${k}: ${c}`)
+      .join(", ") || "none"}). Database is now reset for fresh workshop entries.`
+  );
+
+  return {
+    success: true,
+    totalDeleted,
+    collectionCounts,
+    message: `Database successfully cleared! Erased ${totalDeleted} previous records. Ready for new workshop session entries.`
+  };
+}
+
 // Expose on global window object for consumption by both static HTML templates
 if (typeof window !== "undefined") {
   (window as any).AI_EXPLORER_FIREBASE = {
@@ -549,6 +668,7 @@ if (typeof window !== "undefined") {
     logEngagementMetric,
     listenToWorkshopData,
     logAdminAudit,
+    clearWorkshopSessionData,
     // Auth operations
     signInWithEmailAndPassword: (email: string, pass: string) => signInWithEmailAndPassword(auth, email, pass),
     createUserWithEmailAndPassword: (email: string, pass: string) => createUserWithEmailAndPassword(auth, email, pass),

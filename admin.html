@@ -689,6 +689,10 @@
           📥 Export CSV
         </button>
 
+        <button id="adminBtnClearDb" class="btn btn-outline btn-sm" onclick="openClearDatabaseModal()" title="Erase workshop data and start fresh session" style="border-color: rgba(244, 63, 94, 0.55); color: #FDA4AF; font-weight: 700;">
+          🗑️ Clear Database
+        </button>
+
         <button id="authBtnLogout" class="btn btn-outline btn-sm" onclick="handleAdminSignOut()" style="display:none;">
           Sign Out
         </button>
@@ -1595,6 +1599,23 @@
           </div>
         </div>
 
+        <!-- WORKSHOP SESSION RESET & CLEAR DATABASE SECTION -->
+        <div style="background: linear-gradient(135deg, rgba(225, 29, 72, 0.12) 0%, rgba(30, 41, 59, 0.7) 100%); border: 1px solid rgba(244, 63, 94, 0.35); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+          <div style="max-width: 680px;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+              <span style="font-size: 1.25rem;">⚠️</span>
+              <h3 style="margin: 0; color: #FDA4AF; font-size: 1.05rem; font-weight: 800;">Workshop Session Reset & Clearance</h3>
+              <span class="badge-pill" style="background: rgba(244, 63, 94, 0.2); color: #FDA4AF; font-size: 0.72rem;">Permanent Clean Slate</span>
+            </div>
+            <p style="margin: 0; font-size: 0.82rem; color: #E2E8F0; line-height: 1.5;">
+              Once a workshop session finishes, click <strong>Clear Database</strong> to erase all previous student records, quiz attempts, prompt submissions, and telemetry. All future student joins will start cleanly from zero. Admin accounts and audit logs are preserved.
+            </p>
+          </div>
+          <button type="button" class="btn btn-sm" onclick="openClearDatabaseModal()" style="background: linear-gradient(135deg, #E11D48 0%, #BE123C 100%); color: #FFFFFF; font-weight: 800; border: none; padding: 0.55rem 1.15rem; box-shadow: 0 4px 14px rgba(225, 29, 72, 0.4); cursor: pointer;">
+            🗑️ Clear Database for Next Session
+          </button>
+        </div>
+
         <!-- Subnav inside Database Tab -->
         <div style="display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap;">
           <button class="btn btn-outline btn-sm active" id="dbBtnStudents" onclick="switchDbCollection('students')">students</button>
@@ -1652,6 +1673,68 @@
         <button type="button" class="btn btn-primary" style="width: 100%;" onclick="submitPasswordReset()">
           Send Reset Email →
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: CLEAR DATABASE / RESET SESSION
+       ============================================================ -->
+  <div id="clearDatabaseModal" class="modal-overlay" onclick="closeClearDatabaseModal(event)">
+    <div class="modal-box" style="max-width: 520px; border-color: rgba(244, 63, 94, 0.45);" onclick="event.stopPropagation()">
+      <div class="modal-header" style="border-bottom-color: rgba(244, 63, 94, 0.25);">
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <span style="font-size: 1.5rem;">⚠️</span>
+          <div>
+            <h3 style="margin: 0; color: #FDA4AF; font-size: 1.15rem; font-weight: 800;">Clear Database & Reset Workshop Session</h3>
+            <span style="font-size: 0.76rem; color: #94A3B8;">Permanently wipe previous session records for fresh entries</span>
+          </div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="closeClearDatabaseModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 1.35rem;">
+        <div style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.15rem; font-size: 0.82rem; color: #FECDD3; line-height: 1.5;">
+          <strong>Warning:</strong> This action will permanently erase all student registration profiles, quiz attempts, prompt evaluations, badges, and telemetry across Firestore and server storage. Once cleared, only brand new entries will be stored.
+        </div>
+
+        <div style="font-size: 0.8rem; color: #94A3B8; margin-bottom: 1rem;">
+          <div style="font-weight: 700; color: #E2E8F0; margin-bottom: 0.4rem;">Collections to be erased:</div>
+          <ul style="margin: 0; padding-left: 1.25rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem;">
+            <li>🧑‍🎓 <code>students</code></li>
+            <li>📝 <code>quizAttempts</code></li>
+            <li>💬 <code>promptSubmissions</code></li>
+            <li>🧭 <code>careerAssessments</code></li>
+            <li>🎖️ <code>studentBadges</code></li>
+            <li>⚡ <code>engagementMetrics</code></li>
+            <li>📊 <code>sectionMetrics</code></li>
+            <li>📦 <code>results</code> (legacy)</li>
+          </ul>
+        </div>
+
+        <div style="font-size: 0.8rem; color: #34D399; margin-bottom: 1.15rem; display: flex; align-items: center; gap: 0.45rem;">
+          <span>✓</span> Admin logins & security audit logs are safely preserved.
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <label style="display: block; font-size: 0.82rem; color: #E2E8F0; margin-bottom: 0.4rem; font-weight: 700;">
+            Type <span style="color: #FDA4AF; font-family: var(--font-mono); font-weight: 800;">RESET</span> to confirm:
+          </label>
+          <input type="text" id="clearDbConfirmInput" class="admin-input" placeholder="Type RESET in capital letters" style="border-color: rgba(244, 63, 94, 0.4);" oninput="checkClearDbConfirmInput()" />
+        </div>
+
+        <div id="clearDbProgress" style="display: none; margin-bottom: 1rem; padding: 0.85rem; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(53, 217, 255, 0.35); border-radius: 8px; font-size: 0.82rem; color: var(--admin-cyan);">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="status-dot" style="background: var(--admin-cyan);"></span>
+            <span id="clearDbProgressText">Erasing collections from Cloud Firestore...</span>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.65rem;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="closeClearDatabaseModal()">Cancel</button>
+          <button type="button" id="btnConfirmClearDb" class="btn btn-sm" style="background: #E11D48; color: #FFFFFF; font-weight: 700; border: none; opacity: 0.5; cursor: not-allowed;" disabled onclick="executeClearDatabase()">
+            🗑️ Erase & Reset Database Now
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -3343,6 +3426,108 @@
       window.__toastTimer = setTimeout(() => {
         toast.style.display = "none";
       }, 3500);
+    }
+
+    /* ============================================================
+       CLEAR DATABASE / WORKSHOP SESSION RESET LOGIC
+       ============================================================ */
+    function openClearDatabaseModal() {
+      const modal = document.getElementById("clearDatabaseModal");
+      const input = document.getElementById("clearDbConfirmInput");
+      const btn = document.getElementById("btnConfirmClearDb");
+      const progress = document.getElementById("clearDbProgress");
+      if (!modal) return;
+
+      if (input) input.value = "";
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = "0.5";
+        btn.style.cursor = "not-allowed";
+        btn.innerText = "🗑️ Erase & Reset Database Now";
+      }
+      if (progress) progress.style.display = "none";
+      modal.classList.add("active");
+      if (input) setTimeout(() => input.focus(), 150);
+    }
+
+    function closeClearDatabaseModal(e) {
+      if (e && e.target !== e.currentTarget) return;
+      const modal = document.getElementById("clearDatabaseModal");
+      if (modal) modal.classList.remove("active");
+    }
+
+    function checkClearDbConfirmInput() {
+      const input = document.getElementById("clearDbConfirmInput");
+      const btn = document.getElementById("btnConfirmClearDb");
+      if (!input || !btn) return;
+      const isValid = input.value.trim() === "RESET";
+      btn.disabled = !isValid;
+      btn.style.opacity = isValid ? "1" : "0.5";
+      btn.style.cursor = isValid ? "pointer" : "not-allowed";
+    }
+
+    async function executeClearDatabase() {
+      const btn = document.getElementById("btnConfirmClearDb");
+      const progress = document.getElementById("clearDbProgress");
+      const progressText = document.getElementById("clearDbProgressText");
+      const input = document.getElementById("clearDbConfirmInput");
+
+      if (input && input.value.trim() !== "RESET") return;
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Clearing Database...";
+      }
+      if (progress) progress.style.display = "block";
+      if (progressText) progressText.innerText = "Erasing student documents, quizzes, and telemetry across Cloud Firestore...";
+
+      try {
+        const fb = window.AI_EXPLORER_FIREBASE;
+        let totalErased = 0;
+
+        if (fb && typeof fb.clearWorkshopSessionData === "function") {
+          const res = await fb.clearWorkshopSessionData({
+            clearLocalStorage: true,
+            clearServerDatabase: true
+          });
+          totalErased = res.totalDeleted || 0;
+        } else {
+          // Direct fallback to server clear-database endpoint
+          const res = await fetch("/api/admin/clear-database", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ clearedBy: currentAdminUser?.email || "admin" })
+          });
+          const json = await res.json();
+          totalErased = json.success ? 1 : 0;
+        }
+
+        // Reset in-memory collections immediately
+        dbStudents = [];
+        dbQuizAttempts = [];
+        dbPromptSubmissions = [];
+        dbCareerAssessments = [];
+        dbBadges = [];
+        dbEngagementMetrics = [];
+
+        recalculateAndRender();
+        renderDatabaseInspector();
+
+        if (progressText) progressText.innerText = `Database cleared! Erased ${totalErased} records. Only new workshop entries will now be recorded.`;
+        showToast("Database cleared! Ready for new workshop session 🚀", "✅");
+
+        setTimeout(() => {
+          closeClearDatabaseModal();
+        }, 1200);
+      } catch (err) {
+        console.error("Clear database failed:", err);
+        showToast("Clear database failed: " + (err.message || "Unknown error"), "❌");
+        if (progressText) progressText.innerText = "Error: " + (err.message || "Operation failed.");
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = "Retry Clear Database";
+        }
+      }
     }
   </script>
 </body>

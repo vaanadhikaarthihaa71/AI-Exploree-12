@@ -279,6 +279,36 @@ async function startServer() {
     res.json({ success: true, id: subId, stats: db.stats });
   });
 
+  // Admin session reset & clear database
+  app.post('/api/admin/clear-database', (req: Request, res: Response) => {
+    const { clearedBy } = req.body || {};
+    const freshDb: DatabaseStructure = {
+      success: true,
+      students: [],
+      submissions: [],
+      stats: {
+        totalStudents: 0,
+        totalSubmissions: 0,
+        careerCount: 0,
+        quizCount: 0,
+        avgQuizScore: 0,
+        avgQuizPct: 0,
+        topDomain: 'None',
+        topDomainCount: 0,
+        topPerformer: null
+      },
+      topPerformers: [],
+      lastUpdated: new Date().toISOString()
+    };
+    saveDatabase(freshDb);
+    console.log(`[Admin] Database cleared by ${clearedBy || 'administrator'} at ${new Date().toISOString()}`);
+    res.json({
+      success: true,
+      message: 'Database reset successfully. Ready for new workshop entries.',
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // Route /admin and /admin.html to admin portal
   app.get(['/admin', '/admin.html'], (req: Request, res: Response) => {
     const target = isProd ? path.resolve(__dirname, 'dist', 'admin.html') : path.resolve(__dirname, 'admin.html');
