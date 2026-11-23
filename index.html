@@ -483,14 +483,14 @@
 
     #ssmietWelcomeModal .ssmiet-welcome-dialog {
       width: 100% !important;
-      max-width: min(340px, calc(100vw - 1.5rem)) !important;
+      max-width: min(380px, calc(100vw - 1.5rem)) !important;
       max-height: calc(100vh - 1.5rem) !important;
       max-height: calc(100dvh - 1.5rem) !important;
       overflow-y: auto !important;
-      padding: 1.1rem 1.2rem !important;
+      padding: 1.25rem 1.3rem !important;
       margin: auto !important;
       box-sizing: border-box !important;
-      border-radius: 18px !important;
+      border-radius: 20px !important;
       text-align: center !important;
     }
 
@@ -504,26 +504,84 @@
     #ssmietWelcomeModal .ssmiet-dept-line {
       font-size: 0.78rem !important;
       font-weight: 700 !important;
-      margin: 0 0 0.7rem !important;
+      margin: 0 0 0.85rem !important;
       line-height: 1.35 !important;
     }
 
+    .welcome-video-stage {
+      position: relative;
+      width: 100%;
+      margin: 0 auto 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .welcome-video-halo {
+      position: absolute;
+      inset: -8px;
+      margin: auto;
+      width: 92%;
+      height: 86%;
+      background: radial-gradient(ellipse at center, rgba(110, 68, 255, 0.2) 0%, rgba(6, 182, 212, 0.14) 50%, rgba(255, 255, 255, 0) 76%);
+      filter: blur(20px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
     .welcome-video-square {
-      width: min(215px, calc(100vw - 4.5rem));
-      aspect-ratio: 1 / 1;
-      margin: 0 auto 0.85rem;
-      border-radius: 14px;
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: min(332px, calc(100vw - 4rem));
+      margin: 0 auto;
+      border-radius: 18px;
       overflow: hidden;
-      background: #eef4ff;
-      border: 2px solid rgba(110, 68, 255, 0.18);
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+      background: linear-gradient(145deg, #e7f0fb 0%, #f3f6fc 100%);
+      border: 1px solid rgba(110, 68, 255, 0.16);
+      box-shadow: 0 14px 32px -12px rgba(110, 68, 255, 0.22), 0 4px 12px rgba(18, 24, 40, 0.05);
+      cursor: pointer;
+    }
+
+    .welcome-video-square.is-portrait {
+      max-width: min(210px, calc(100vw - 5rem));
+    }
+
+    .welcome-video-square::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
     }
 
     .welcome-video-square video {
       width: 100%;
-      height: 100%;
-      object-fit: cover;
+      height: auto;
+      max-height: 52dvh;
+      object-fit: contain;
       display: block;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .welcome-video-square video::-webkit-media-controls,
+    .welcome-video-square video::-webkit-media-controls-enclosure,
+    .welcome-video-square video::-webkit-media-controls-panel {
+      display: none !important;
+      -webkit-appearance: none !important;
+      opacity: 0 !important;
+    }
+
+    [data-theme="dark"] .welcome-video-square {
+      background: linear-gradient(145deg, #161b2e 0%, #1d2338 100%);
+      border-color: rgba(110, 68, 255, 0.34);
+      box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.5), 0 0 24px rgba(110, 68, 255, 0.18);
+    }
+
+    [data-theme="dark"] .welcome-video-square::after {
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
     }
 
     #ssmietWelcomeModal .modal-close-btn {
@@ -603,7 +661,6 @@
       background: linear-gradient(145deg, #e7f0fb 0%, #f3f6fc 100%);
       border: 1.5px solid rgba(110, 68, 255, 0.22);
       box-shadow: 0 20px 46px -16px rgba(110, 68, 255, 0.22), 0 6px 18px rgba(18, 24, 40, 0.06);
-      cursor: pointer;
       transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
     }
 
@@ -641,8 +698,38 @@
     }
 
     /* ============================================================
-       KNOWLEDGE QUIZ — INSTANT EVALUATION & AUTO-ADVANCE FEEDBACK
+       QUIZ OPTION BUTTONS — TACTILE HOVER SCALE & INSTANT COLOUR FEEDBACK
        ============================================================ */
+    #view-knowledge .quiz-option-btn,
+    #view-career .quiz-option-btn {
+      transform: scale(1) !important;
+      transform-origin: center center;
+      transition:
+        transform 170ms cubic-bezier(0.16, 1, 0.3, 1),
+        background-color 170ms ease,
+        border-color 170ms ease,
+        box-shadow 170ms ease,
+        opacity 170ms ease !important;
+    }
+
+    #view-knowledge .quiz-option-btn:hover:not(:disabled),
+    #view-career .quiz-option-btn:hover:not(:disabled) {
+      transform: scale(1.018) !important;
+      border-color: rgba(110, 68, 255, 0.45) !important;
+      box-shadow: 0 8px 20px -6px rgba(110, 68, 255, 0.16), 0 2px 6px rgba(18, 24, 40, 0.05) !important;
+    }
+
+    #view-knowledge .quiz-option-btn:active:not(:disabled),
+    #view-career .quiz-option-btn:active:not(:disabled) {
+      transform: scale(0.992) !important;
+    }
+
+    #view-knowledge .quiz-option-btn:focus-visible,
+    #view-career .quiz-option-btn:focus-visible {
+      outline: 2px solid var(--accent-purple, #6e44ff);
+      outline-offset: 2px;
+    }
+
     #view-knowledge .quiz-option-btn {
       justify-content: space-between;
       padding: 0.95rem 1.15rem;
@@ -659,9 +746,9 @@
     #view-knowledge .quiz-option-status {
       flex-shrink: 0;
       font-family: var(--font-heading);
-      font-size: 0.8rem;
+      font-size: 0.92rem;
       font-weight: 800;
-      letter-spacing: 0.01em;
+      line-height: 1;
       white-space: nowrap;
       margin-left: 0.75rem;
     }
@@ -672,7 +759,19 @@
     }
 
     #view-knowledge .quiz-option-btn.locked-muted {
-      opacity: 0.56;
+      opacity: 0.5;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #view-knowledge .quiz-option-btn,
+      #view-career .quiz-option-btn,
+      #view-knowledge .quiz-option-btn:hover:not(:disabled),
+      #view-career .quiz-option-btn:hover:not(:disabled),
+      #view-knowledge .quiz-option-btn:active:not(:disabled),
+      #view-career .quiz-option-btn:active:not(:disabled) {
+        transform: none !important;
+        transition: none !important;
+      }
     }
 
     #view-knowledge .quiz-option-btn.correct-choice {
@@ -839,9 +938,57 @@
       #ssmietWelcomeModal .ssmiet-welcome-dialog {
         padding: 0.85rem 1rem !important;
       }
-      .welcome-video-square {
-        width: 175px;
+      .welcome-video-stage {
         margin-bottom: 0.65rem;
+      }
+      .welcome-video-square {
+        max-width: 260px;
+      }
+      .welcome-video-square.is-portrait {
+        max-width: 155px;
+      }
+    }
+
+    /* ============================================================
+       WEBSITE-WIDE SCROLL-TRIGGERED ANIMATION SYSTEM
+       Combines fade-in, subtle slide-up, and staggered reveal.
+       Compositor-only (opacity + transform) · Zero layout shifts.
+       ============================================================ */
+    html.sa-enabled .sa-item:not(.sa-done) {
+      opacity: 0;
+      transform: translate3d(0, 20px, 0);
+      transition:
+        opacity 560ms cubic-bezier(0.16, 1, 0.3, 1) var(--sa-delay, 0ms),
+        transform 600ms cubic-bezier(0.16, 1, 0.3, 1) var(--sa-delay, 0ms);
+      will-change: opacity, transform;
+    }
+
+    /* Override legacy static rules in AI Tools & Career Profile tabs only while revealing */
+    html.sa-enabled #view-tools .sa-item:not(.sa-done),
+    html.sa-enabled #view-career .sa-item:not(.sa-done) {
+      opacity: 0 !important;
+      transform: translate3d(0, 20px, 0) !important;
+      transition:
+        opacity 560ms cubic-bezier(0.16, 1, 0.3, 1) var(--sa-delay, 0ms),
+        transform 600ms cubic-bezier(0.16, 1, 0.3, 1) var(--sa-delay, 0ms) !important;
+      will-change: opacity, transform;
+    }
+
+    html.sa-enabled .sa-item.sa-visible:not(.sa-done),
+    html.sa-enabled #view-tools .sa-item.sa-visible:not(.sa-done),
+    html.sa-enabled #view-career .sa-item.sa-visible:not(.sa-done) {
+      opacity: 1 !important;
+      transform: translate3d(0, 0, 0) !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html.sa-enabled .sa-item,
+      html.sa-enabled #view-tools .sa-item,
+      html.sa-enabled #view-career .sa-item {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+        will-change: auto !important;
       }
     }
   </style>
@@ -1902,14 +2049,18 @@
             </p>
             <div class="knowledge-thankyou-stage">
               <div class="knowledge-thankyou-halo" aria-hidden="true"></div>
-              <div class="knowledge-thankyou-video-wrap" id="knowledgeThankYouVideoWrap" onclick="toggleKnowledgeVideoAudio()" title="Tap to toggle sound">
+              <div class="knowledge-thankyou-video-wrap" id="knowledgeThankYouVideoWrap" oncontextmenu="return false;">
                 <video
                   id="knowledgeThankYouVideo"
                   src="/assets/aistudio/Untitled_video__4__gwr_video_mvp_c252a539.mp4"
+                  muted
+                  data-silent="true"
                   playsinline
                   webkit-playsinline
                   loop
                   preload="auto"
+                  disablepictureinpicture
+                  controlslist="nodownload noplaybackrate noremoteplayback nofullscreen"
                   aria-label="Thank you robot greeting video"
                 ></video>
               </div>
@@ -1938,17 +2089,22 @@
         Department of Computer Science and Engineering (CSE) · SSMIET
       </div>
 
-      <!-- 3. 1:1 Vanakkam Greeting Video -->
-      <div class="welcome-video-square">
-        <video
-          id="welcomeVanakkamVideo"
-          src="/assets/aistudio/Video_Project_4_5a015f7f.mp4"
-          playsinline
-          loop
-          controls
-          preload="auto"
-          aria-label="Vanakkam welcome video"
-        ></video>
+      <!-- 3. Seamlessly Integrated Vanakkam Greeting Video (no native controls) -->
+      <div class="welcome-video-stage">
+        <div class="welcome-video-halo" aria-hidden="true"></div>
+        <div class="welcome-video-square" id="welcomeVanakkamVideoWrap" onclick="toggleWelcomeVideoAudio()" oncontextmenu="return false;">
+          <video
+            id="welcomeVanakkamVideo"
+            src="/assets/aistudio/Video_Project_4_5a015f7f.mp4"
+            playsinline
+            webkit-playsinline
+            loop
+            preload="auto"
+            disablepictureinpicture
+            controlslist="nodownload noplaybackrate noremoteplayback nofullscreen"
+            aria-label="Vanakkam welcome video"
+          ></video>
+        </div>
       </div>
 
       <!-- 4. Start Prompt Gym CTA -->
@@ -5050,7 +5206,14 @@
       if (!videoEl) return;
       try {
         videoEl.currentTime = 0;
-        videoEl.muted = false;
+        const keepSilent = videoEl.dataset && videoEl.dataset.silent === "true";
+        if (keepSilent) {
+          videoEl.muted = true;
+          videoEl.defaultMuted = true;
+          videoEl.volume = 0;
+        } else {
+          videoEl.muted = false;
+        }
         const playPromise = videoEl.play();
         if (playPromise && typeof playPromise.catch === "function") {
           playPromise.catch(() => {
@@ -5234,6 +5397,11 @@
       }
 
       window.scrollTo({ top: 0, behavior: "smooth" });
+
+      if (typeof window.refreshScrollAnimations === "function") {
+        const activePanel = document.getElementById(`view-${targetTab}`);
+        window.refreshScrollAnimations(activePanel, true);
+      }
     }
 
     /* ============================================================
@@ -6681,22 +6849,22 @@
       const answeredIdx = STATE.knowledgeAnswers[qIndex];
       const hasAnswered = answeredIdx !== null;
 
-      // Hide feedback initially if unanswered
-      if (!hasAnswered && feedbackCard) {
+      // Always keep feedback banner hidden for crisp, color-only immediate progression
+      if (feedbackCard) {
         feedbackCard.style.display = "none";
       }
 
       const letters = ["A", "B", "C", "D"];
       optionsList.innerHTML = activeOptions.map((optText, optIdx) => {
         let extraClass = "";
-        let statusLabel = "";
+        let statusIcon = "";
         if (hasAnswered) {
           if (optIdx === q.correct) {
             extraClass = "correct-choice";
-            statusLabel = isTa ? "✓ சரியான பதில்" : "✓ Correct";
+            statusIcon = "✓";
           } else if (optIdx === answeredIdx) {
             extraClass = "wrong-choice";
-            statusLabel = isTa ? "✕ தவறான தேர்வு" : "✕ Incorrect";
+            statusIcon = "✕";
           } else {
             extraClass = "locked-muted";
           }
@@ -6715,15 +6883,10 @@
               <span class="option-letter">${letters[optIdx]}</span>
               <span>${escapeHtml(optText)}</span>
             </span>
-            ${statusLabel ? `<span class="quiz-option-status">${statusLabel}</span>` : ""}
+            ${statusIcon ? `<span class="quiz-option-status" aria-hidden="true">${statusIcon}</span>` : ""}
           </button>
         `;
       }).join("");
-
-      // If already answered (e.g. user toggled language during feedback), refresh feedback text without restarting timer
-      if (hasAnswered) {
-        showKnowledgeFeedback(answeredIdx === q.correct, activeExplanation, null);
-      }
     }
 
     function selectKnowledgeOption(optIdx) {
@@ -6735,16 +6898,12 @@
 
       const q = STATE.knowledgeQuestions[qIndex];
       const isCorrect = optIdx === q.correct;
-      const isTa = STATE.quizLanguage === "ta";
-      const activeExplanation = isTa ? (q.explanation_ta || q.explanation) : q.explanation;
 
-      // Immediately lock options & highlight correct/incorrect answers
+      // Immediately lock options & mark right (green) / wrong (red) using colors
       renderKnowledgeQuestion();
 
-      const delayMs = isCorrect ? 1700 : 2300;
-      showKnowledgeFeedback(isCorrect, activeExplanation, delayMs);
-
-      // Automatically proceed to the next question (or results screen after final question)
+      // Snappy visual beat so the color indicator registers clearly, then pass immediately to the next question
+      const delayMs = isCorrect ? 450 : 650;
       if (STATE.knowledgeAutoAdvanceTimer) {
         clearTimeout(STATE.knowledgeAutoAdvanceTimer);
       }
@@ -6752,45 +6911,6 @@
         STATE.knowledgeAutoAdvanceTimer = null;
         handleKnowledgeNext();
       }, delayMs);
-    }
-
-    function showKnowledgeFeedback(isCorrect, explanation, delayMs) {
-      const feedbackCard = document.getElementById("knowledgeInstantFeedback");
-      const iconEl = document.getElementById("knowledgeFeedbackIcon");
-      const textEl = document.getElementById("knowledgeFeedbackText");
-      const autoNextNote = document.getElementById("knowledgeAutoNextNote");
-      const progressBar = document.getElementById("knowledgeAutoProgressBar");
-
-      if (!feedbackCard || !iconEl || !textEl) return;
-
-      const isTa = STATE.quizLanguage === "ta";
-      const isFinalQuestion = STATE.currentKnowledgeIndex >= STATE.knowledgeQuestions.length - 1;
-
-      feedbackCard.className = `instant-feedback-card ${isCorrect ? 'correct' : 'incorrect'}`;
-      iconEl.textContent = isCorrect ? "✅" : "❌";
-
-      const title = isCorrect 
-        ? (isTa ? 'சரியான பதில்!' : 'Correct Answer!')
-        : (isTa ? 'தவறான பதில்' : 'Incorrect Answer');
-
-      textEl.innerHTML = `
-        <strong class="knowledge-feedback-title">${title}</strong>
-        <span class="knowledge-feedback-desc">${escapeHtml(explanation)}</span>
-      `;
-
-      if (autoNextNote) {
-        autoNextNote.textContent = isFinalQuestion
-          ? (isTa ? "இறுதி மதிப்பெண் தயாராகிறது..." : "Loading your final results...")
-          : (isTa ? "அடுத்த கேள்விக்கு செல்கிறது..." : "Moving to next question...");
-      }
-
-      if (progressBar && typeof delayMs === "number") {
-        progressBar.style.animation = "none";
-        void progressBar.offsetWidth; // Restart progress bar animation cleanly
-        progressBar.style.animation = `knowledgeAutoAdvanceFill ${delayMs}ms linear forwards`;
-      }
-
-      feedbackCard.style.display = "flex";
     }
 
     function handleKnowledgeNext() {
@@ -7533,8 +7653,20 @@
       const wrap = document.getElementById("knowledgeThankYouVideoWrap");
       if (!video || !wrap) return;
 
+      video.controls = false;
+      video.removeAttribute("controls");
+      video.muted = true;
+      video.defaultMuted = true;
+      video.volume = 0;
       video.playsInline = true;
       video.loop = true;
+
+      video.addEventListener("volumechange", () => {
+        if (!video.muted || video.volume !== 0) {
+          video.muted = true;
+          video.volume = 0;
+        }
+      });
 
       const syncVideoAspectRatio = () => {
         if (!video.videoWidth || !video.videoHeight) return;
@@ -7549,8 +7681,31 @@
       video.addEventListener("loadedmetadata", syncVideoAspectRatio);
     }
 
-    function toggleKnowledgeVideoAudio() {
-      const video = document.getElementById("knowledgeThankYouVideo");
+    function initWelcomeVideoExperience() {
+      const video = document.getElementById("welcomeVanakkamVideo");
+      const wrap = document.getElementById("welcomeVanakkamVideoWrap");
+      if (!video || !wrap) return;
+
+      video.controls = false;
+      video.removeAttribute("controls");
+      video.playsInline = true;
+      video.loop = true;
+
+      const syncWelcomeAspectRatio = () => {
+        if (!video.videoWidth || !video.videoHeight) return;
+        const isPortrait = video.videoHeight > video.videoWidth;
+        wrap.classList.toggle("is-portrait", isPortrait);
+        wrap.style.aspectRatio = `${video.videoWidth} / ${video.videoHeight}`;
+      };
+
+      if (video.readyState >= 1) {
+        syncWelcomeAspectRatio();
+      }
+      video.addEventListener("loadedmetadata", syncWelcomeAspectRatio);
+    }
+
+    function toggleWelcomeVideoAudio() {
+      const video = document.getElementById("welcomeVanakkamVideo");
       if (!video) return;
       if (video.paused) {
         video.muted = false;
@@ -7564,14 +7719,364 @@
       }
     }
 
-    // Call init3DCardTilt, initHeroVideoExperience, and initKnowledgeVideoExperience on DOM ready
+    /* ============================================================
+       WEBSITE-WIDE SCROLL-TRIGGERED ANIMATION ENGINE
+       Fade-in + Slide-up + Semantic Staggered Reveal
+       Order: Headings -> Descriptions -> Media -> Cards -> Buttons
+       ============================================================ */
+    (function setupScrollRevealEngine() {
+      const reducedMotionMQ = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)");
+      const supportsIO = typeof window.IntersectionObserver === "function";
+
+      if (!supportsIO || (reducedMotionMQ && reducedMotionMQ.matches)) {
+        window.refreshScrollAnimations = function () {};
+        return;
+      }
+
+      // Curated semantic target rules with priority tiers (0: headings, 1: descriptions, 2: media, 3: cards, 4: buttons)
+      const TARGET_RULES = [
+        // Tier 0: Headings, badges & section headers
+        {
+          tier: 0,
+          selector: [
+            ".hero-badge-pill",
+            ".hero-headline",
+            "#idStep1Title",
+            ".gym-intro h2",
+            "#compareSectionTitle",
+            "#recipeCardTitle",
+            "#promptChallengeTitle",
+            "#toolsMainTitle",
+            "#resistantMainTitle",
+            ".career-hud-topline",
+            "#careerHudTitle",
+            ".career-stage-card .form-step-indicator",
+            ".career-card-heading",
+            "#careerResultHeadline",
+            "#knowledgeQuestionCard .quiz-meta-row",
+            "#knowledgeQuestionText",
+            "#knowledgeResultHeadline",
+            "#knowledgeWrongReviewTitle",
+            "#knowledgeThankYouTitle"
+          ].join(", ")
+        },
+        // Tier 1: Descriptions, subtitles & intro callouts
+        {
+          tier: 1,
+          selector: [
+            ".hero-description",
+            "#idStep1Desc",
+            ".gym-intro p",
+            "#recipeCardDesc",
+            "#promptChallengeDesc",
+            "#toolsMainSubtitle",
+            "#resistantMainDesc",
+            "#goldenRuleBanner",
+            ".domains-progress-tracker",
+            "#careerHudSub",
+            ".career-card-sub",
+            "#careerResultSub",
+            "#knowledgeResultSubtitle",
+            "#knowledgeThankYouSubtitle",
+            "footer#siteFooter .container > p"
+          ].join(", ")
+        },
+        // Tier 2: Images, videos, mascot stages, card decks & trophies
+        {
+          tier: 2,
+          selector: [
+            ".hero-mascot-col",
+            "#deckStage",
+            "#trophy3DStage",
+            ".knowledge-thankyou-stage"
+          ].join(", ")
+        },
+        // Tier 3: Feature cards, comparison cards, recipe cards, tool cards, form groups, review items
+        {
+          tier: 3,
+          selector: [
+            ".hero-highlights-row .hero-highlight-item",
+            "#createIdForm",
+            "#comparisonCardsGrid .comparison-topic-card",
+            ".prompt-gym-floating-hud .prompt-token-3d",
+            ".recipe-grid .recipe-item",
+            "#promptLiveDetectBar",
+            "#studentPromptText",
+            "#toolDotsContainer",
+            "#toolCardContainer",
+            "#resistantCardsGrid .resistant-card",
+            "#careerStepperBar",
+            ".career-stage-card .form-group",
+            "#careerConsentCard .consent-summary-box",
+            ".career-match-card",
+            ".dossier-card",
+            "#knowledgeOptionsList",
+            ".badge-display-box",
+            "#knowledgeWrongReviewList .wrong-review-item"
+          ].join(", ")
+        },
+        // Tier 4: Buttons & CTA action bars
+        {
+          tier: 4,
+          selector: [
+            ".hero-cta-group",
+            "#deckActionArea",
+            "#btnLoadSamplePrompt",
+            "#btnScorePrompt",
+            "#promptContinueBtnWrap",
+            ".resistant-filter-bar",
+            "#resistantCompleteBanner",
+            ".career-stage-card .form-nav-row",
+            ".career-stage-card .form-nav-split",
+            ".results-action-dock",
+            "#btnRetakeKnowledge",
+            "footer#siteFooter .container > div"
+          ].join(", ")
+        }
+      ];
+
+      let observer = null;
+      let scrollCheckRaf = null;
+      let mutationRaf = null;
+
+      function isElementRenderable(el) {
+        if (!el || !el.isConnected) return false;
+        // Skip elements inside hidden tabs or display:none containers
+        const section = el.closest(".section-view");
+        if (section && !section.classList.contains("active")) return false;
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 || rect.height > 0;
+      }
+
+      function revealBatch(elements) {
+        const ready = elements.filter(el => el && !el.classList.contains("sa-visible") && isElementRenderable(el));
+        if (!ready.length) return;
+
+        // Group by vertical viewport band, then sort by semantic tier (Headings -> Descriptions -> Media -> Cards -> Buttons)
+        const measured = ready.map((el, idx) => ({
+          el,
+          idx,
+          tier: Number(el.dataset.saTier || 3),
+          top: el.getBoundingClientRect().top,
+          left: el.getBoundingClientRect().left
+        }));
+
+        measured.sort((a, b) => {
+          const bandA = Math.floor(a.top / 240);
+          const bandB = Math.floor(b.top / 240);
+          if (bandA !== bandB) return bandA - bandB;
+          if (a.tier !== b.tier) return a.tier - b.tier;
+          if (Math.abs(a.top - b.top) > 24) return a.top - b.top;
+          if (Math.abs(a.left - b.left) > 12) return a.left - b.left;
+          return a.idx - b.idx;
+        });
+
+        measured.forEach((item, orderIdx) => {
+          const delayMs = Math.min(orderIdx * 75, 420);
+          const el = item.el;
+          el.style.setProperty("--sa-delay", `${delayMs}ms`);
+          el.classList.add("sa-visible");
+          if (observer) observer.unobserve(el);
+
+          // Clear reveal override after transition finishes so native hover/3D transforms stay intact
+          clearTimeout(el._saDoneTimer);
+          el._saDoneTimer = setTimeout(() => {
+            el.classList.add("sa-done");
+            el.style.removeProperty("--sa-delay");
+          }, 680 + delayMs);
+        });
+      }
+
+      function revealVisibleInScope(scopeRoot) {
+        const root = scopeRoot || document;
+        const vh = window.innerHeight || document.documentElement.clientHeight || 800;
+        const candidates = root.querySelectorAll(".sa-item:not(.sa-visible)");
+        const inView = [];
+
+        candidates.forEach(el => {
+          if (!isElementRenderable(el)) return;
+          const rect = el.getBoundingClientRect();
+          // Reveal elements inside viewport OR already scrolled above viewport (never leave content hidden!)
+          if (rect.top <= vh * 0.96) {
+            inView.push(el);
+          }
+        });
+
+        if (inView.length) {
+          revealBatch(inView);
+        }
+      }
+
+      function tagAndObserve(scopeRoot, resetExisting) {
+        const root = scopeRoot || document;
+        const newlyTagged = [];
+
+        TARGET_RULES.forEach(rule => {
+          const matched = root.querySelectorAll(rule.selector);
+          matched.forEach(el => {
+            // Exclude fixed navigation, modals, and toasts
+            if (el.closest("header.site-header, nav.nav-tabs-wrap, .modal-backdrop, .toast-msg")) return;
+            // Avoid double-nesting inside another .sa-item
+            if (el.parentElement && el.parentElement.closest(".sa-item")) return;
+
+            el.dataset.saTier = String(rule.tier);
+
+            if (resetExisting) {
+              clearTimeout(el._saDoneTimer);
+              el.classList.remove("sa-visible", "sa-done");
+              el.style.removeProperty("--sa-delay");
+            }
+
+            if (!el.classList.contains("sa-item")) {
+              el.classList.add("sa-item");
+              newlyTagged.push(el);
+            } else if (resetExisting) {
+              newlyTagged.push(el);
+            }
+          });
+        });
+
+        // Observe any unrevealed items inside this scope
+        const toObserve = root.querySelectorAll(".sa-item:not(.sa-visible)");
+        toObserve.forEach(el => {
+          if (observer && isElementRenderable(el)) {
+            observer.observe(el);
+          }
+        });
+
+        // Immediately reveal items already within the viewport on the next frame
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            revealVisibleInScope(root);
+          });
+        });
+      }
+
+      function initScrollAnimations() {
+        document.documentElement.classList.add("sa-enabled");
+
+        observer = new IntersectionObserver(
+          (entries) => {
+            const entering = [];
+            entries.forEach(entry => {
+              if (entry.isIntersecting && !entry.target.classList.contains("sa-visible")) {
+                entering.push(entry.target);
+              }
+            });
+            if (entering.length) {
+              revealBatch(entering);
+            }
+          },
+          {
+            threshold: 0.05,
+            rootMargin: "0px 0px -28px 0px"
+          }
+        );
+
+        // Scan active view + footer on initial load
+        const activeSection = document.querySelector(".section-view.active");
+        if (activeSection) tagAndObserve(activeSection, false);
+        const footer = document.getElementById("siteFooter");
+        if (footer) tagAndObserve(footer, false);
+
+        // Passive scroll + resize safety check so fast scrolling never leaves any item hidden
+        const scheduleScrollSweep = () => {
+          if (scrollCheckRaf) return;
+          scrollCheckRaf = requestAnimationFrame(() => {
+            scrollCheckRaf = null;
+            const currentActive = document.querySelector(".section-view.active");
+            if (currentActive) revealVisibleInScope(currentActive);
+            const siteFooter = document.getElementById("siteFooter");
+            if (siteFooter) revealVisibleInScope(siteFooter);
+          });
+        };
+        window.addEventListener("scroll", scheduleScrollSweep, { passive: true });
+        window.addEventListener("resize", scheduleScrollSweep, { passive: true });
+
+        // Watch <main> for newly injected cards or newly shown result/step panels (ignores mousemove styles & self mutations)
+        const mainEl = document.querySelector("main");
+        if (mainEl && typeof MutationObserver === "function") {
+          const STRUCTURAL_PANELS = new Set([
+            "deckActionArea",
+            "promptScoreResult",
+            "promptContinueBtnWrap",
+            "resistantCompleteBanner",
+            "careerStep1Card",
+            "careerStep2Card",
+            "careerStep3Card",
+            "careerConsentCard",
+            "careerResultCard",
+            "knowledgeQuestionCard",
+            "knowledgeResultCard",
+            "knowledgeWrongReviewWrap"
+          ]);
+
+          const mo = new MutationObserver((mutations) => {
+            let shouldScan = false;
+            for (let i = 0; i < mutations.length; i++) {
+              const m = mutations[i];
+              if (m.type === "childList" && m.addedNodes.length > 0) {
+                for (let j = 0; j < m.addedNodes.length; j++) {
+                  if (m.addedNodes[j].nodeType === 1) {
+                    shouldScan = true;
+                    break;
+                  }
+                }
+              } else if (m.type === "attributes" && m.target && STRUCTURAL_PANELS.has(m.target.id)) {
+                shouldScan = true;
+              }
+              if (shouldScan) break;
+            }
+            if (!shouldScan || mutationRaf) return;
+            mutationRaf = requestAnimationFrame(() => {
+              mutationRaf = null;
+              const currentActive = document.querySelector(".section-view.active");
+              if (currentActive) tagAndObserve(currentActive, false);
+            });
+          });
+          mo.observe(mainEl, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ["style"]
+          });
+        }
+
+        // Respect dynamic changes to OS reduced-motion setting
+        if (reducedMotionMQ && typeof reducedMotionMQ.addEventListener === "function") {
+          reducedMotionMQ.addEventListener("change", (e) => {
+            if (e.matches) {
+              document.documentElement.classList.remove("sa-enabled");
+              document.querySelectorAll(".sa-item").forEach(el => {
+                el.classList.add("sa-visible", "sa-done");
+              });
+            }
+          });
+        }
+      }
+
+      window.refreshScrollAnimations = function (scopeRoot, resetExisting) {
+        if (!observer) return;
+        tagAndObserve(scopeRoot || document.querySelector(".section-view.active"), !!resetExisting);
+      };
+
+      window._initScrollRevealEngine = initScrollAnimations;
+    })();
+
+    // Call init3DCardTilt, video experiences, and ScrollRevealEngine on DOM ready
     function initAll3DExperiences() {
       init3DCardTilt();
       if (typeof initHeroVideoExperience === "function") {
         initHeroVideoExperience();
       }
+      if (typeof initWelcomeVideoExperience === "function") {
+        initWelcomeVideoExperience();
+      }
       if (typeof initKnowledgeVideoExperience === "function") {
         initKnowledgeVideoExperience();
+      }
+      if (typeof window._initScrollRevealEngine === "function") {
+        window._initScrollRevealEngine();
       }
     }
 
