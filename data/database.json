@@ -14,5 +14,11 @@
     "topPerformer": null
   },
   "topPerformers": [],
-  "lastUpdated": "2026-11-01T16:49:05.829Z"
+  "lastUpdated": "2026-11-23T10:56:29.082Z",
+  "adminAuth": {
+    "username": "aiex",
+    "salt": "24e337aea35507961efd9e26e2253876",
+    "passwordHash": "f2d1f9ce46f242cfe6a682df524de8aa5b0069007333fd4d9d148b45b1e47d04619d27a88353a75bbbac9aa20f2f1cfb4361362f0d0fbb0360a1e9d7d6a44019",
+    "updatedAt": "2026-11-23T10:56:29.082Z"
+  }
 }

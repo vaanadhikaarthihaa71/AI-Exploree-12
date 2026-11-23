@@ -705,6 +705,8 @@ export async function logAdminAudit(action: string, details: string) {
 export async function clearWorkshopSessionData(options?: {
   clearLocalStorage?: boolean;
   clearServerDatabase?: boolean;
+  adminToken?: string | null;
+  clearedBy?: string;
 }): Promise<{
   success: boolean;
   totalDeleted: number;
@@ -752,19 +754,28 @@ export async function clearWorkshopSessionData(options?: {
     }
   }
 
-  // Clear local server database.json via server API if available
+  // Clear local server database.json via authenticated server API
   if (options?.clearServerDatabase !== false) {
     try {
-      await fetch("/api/admin/clear-database", {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (options?.adminToken) {
+        headers["Authorization"] = `Bearer ${options.adminToken}`;
+      }
+      const res = await fetch("/api/admin/clear-database", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
-          clearedBy: auth.currentUser?.email || "admin",
+          clearedBy: options?.clearedBy || auth.currentUser?.email || "admin",
           timestamp: new Date().toISOString()
         })
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Unauthorized to clear server database");
+      }
     } catch (e) {
       console.warn("Could not clear local server database:", e);
+      throw e;
     }
   }
 
@@ -775,7 +786,7 @@ export async function clearWorkshopSessionData(options?: {
       bc.postMessage({
         type: "session_reset",
         clearedAt: new Date().toISOString(),
-        clearedBy: auth.currentUser?.email || "admin"
+        clearedBy: options?.clearedBy || auth.currentUser?.email || "admin"
       });
       bc.close();
     }

@@ -1,7 +1,8 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -41,6 +42,20 @@ interface Submission {
   [key: string]: any;
 }
 
+interface AdminAuthRecord {
+  username: string;
+  salt: string;
+  passwordHash: string;
+  updatedAt: string;
+}
+
+interface AdminSession {
+  username: string;
+  displayName: string;
+  createdAt: number;
+  expiresAt: number;
+}
+
 interface DatabaseStructure {
   success: boolean;
   students: Student[];
@@ -48,6 +63,140 @@ interface DatabaseStructure {
   stats: any;
   topPerformers: Student[];
   lastUpdated: string;
+  adminAuth?: AdminAuthRecord;
+}
+
+// Server-side in-memory admin sessions & login rate-limit tracker
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
+const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_LOGIN_ATTEMPTS = 10;
+
+const adminSessions = new Map<string, AdminSession>();
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function timingSafeStringMatch(a: string, b: string): boolean {
+  const hashA = crypto.createHash('sha256').update(a, 'utf8').digest();
+  const hashB = crypto.createHash('sha256').update(b, 'utf8').digest();
+  return crypto.timingSafeEqual(hashA, hashB);
+}
+
+function hashAdminPassword(password: string, saltHex?: string): { salt: string; passwordHash: string } {
+  const salt = saltHex || crypto.randomBytes(16).toString('hex');
+  const derived = crypto.scryptSync(password, salt, 64).toString('hex');
+  return { salt, passwordHash: derived };
+}
+
+function verifyScryptPassword(password: string, salt: string, storedHashHex: string): boolean {
+  try {
+    const derived = crypto.scryptSync(password, salt, 64);
+    const stored = Buffer.from(storedHashHex, 'hex');
+    if (derived.length !== stored.length) return false;
+    return crypto.timingSafeEqual(derived, stored);
+  } catch {
+    return false;
+  }
+}
+
+function isAdminConfigured(db?: DatabaseStructure): boolean {
+  const envUser = (process.env.ADMIN_USERNAME || '').trim();
+  const envPass = process.env.ADMIN_PASSWORD || '';
+  if (envUser.length > 0 && envPass.length > 0) return true;
+  const currentDb = db || loadDatabase();
+  return Boolean(currentDb.adminAuth?.username && currentDb.adminAuth?.salt && currentDb.adminAuth?.passwordHash);
+}
+
+function verifyAdminCredentials(nameInput: string, passwordInput: string): { valid: boolean; username: string } {
+  const normalizedInput = nameInput.trim().toLowerCase();
+  const envUser = (process.env.ADMIN_USERNAME || '').trim().toLowerCase();
+  const envPass = process.env.ADMIN_PASSWORD || '';
+
+  // Environment variables always take highest precedence when configured
+  if (envUser.length > 0 && envPass.length > 0) {
+    const userOk = timingSafeStringMatch(normalizedInput, envUser);
+    const passOk = timingSafeStringMatch(passwordInput, envPass);
+    return { valid: userOk && passOk, username: envUser };
+  }
+
+  const db = loadDatabase();
+  const authRecord = db.adminAuth;
+  if (!authRecord || !authRecord.username || !authRecord.salt || !authRecord.passwordHash) {
+    return { valid: false, username: '' };
+  }
+
+  const storedUser = authRecord.username.trim().toLowerCase();
+  const userOk = timingSafeStringMatch(normalizedInput, storedUser);
+  const passOk = verifyScryptPassword(passwordInput, authRecord.salt, authRecord.passwordHash);
+  return { valid: userOk && passOk, username: storedUser };
+}
+
+function createAdminSession(username: string): { token: string; session: AdminSession } {
+  const now = Date.now();
+  // Prune expired sessions opportunistically
+  for (const [k, s] of adminSessions.entries()) {
+    if (s.expiresAt <= now) adminSessions.delete(k);
+  }
+  const token = crypto.randomBytes(32).toString('hex');
+  const session: AdminSession = {
+    username,
+    displayName: `Admin (${username})`,
+    createdAt: now,
+    expiresAt: now + SESSION_TTL_MS
+  };
+  adminSessions.set(token, session);
+  return { token, session };
+}
+
+function extractBearerToken(req: Request): string | null {
+  const header = req.headers.authorization;
+  if (!header || typeof header !== 'string') return null;
+  const match = header.match(/^Bearer\s+([A-Za-z0-9._-]+)$/);
+  return match ? match[1] : null;
+}
+
+function requireAdminAuth(req: Request, res: Response, next: NextFunction) {
+  const token = extractBearerToken(req);
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'Admin authentication required.' });
+  }
+  const session = adminSessions.get(token);
+  if (!session || session.expiresAt <= Date.now()) {
+    if (session) adminSessions.delete(token);
+    return res.status(401).json({ success: false, error: 'Admin session expired or invalid. Please sign in again.' });
+  }
+  (req as any).adminSession = session;
+  (req as any).adminToken = token;
+  next();
+}
+
+function getClientIp(req: Request): string {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded.length > 0) {
+    return forwarded.split(',')[0].trim();
+  }
+  return req.socket?.remoteAddress || 'unknown';
+}
+
+function checkLoginRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+  if (!entry || entry.resetAt <= now) {
+    return true;
+  }
+  return entry.count < MAX_LOGIN_ATTEMPTS;
+}
+
+function recordFailedLogin(ip: string): void {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+  if (!entry || entry.resetAt <= now) {
+    loginAttempts.set(ip, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
+  } else {
+    entry.count += 1;
+  }
+}
+
+function clearLoginAttempts(ip: string): void {
+  loginAttempts.delete(ip);
 }
 
 function loadDatabase(): DatabaseStructure {
@@ -151,19 +300,66 @@ async function startServer() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-  // CORS headers
+  // Security response headers (no wildcard CORS on API routes)
   app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    if (req.method === 'OPTIONS') {
-      return res.sendStatus(200);
-    }
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'same-origin');
     next();
   });
 
-  // Database API endpoints
-  app.get('/api/database', (req: Request, res: Response) => {
+  // Admin Auth Status (indicates whether credentials are configured)
+  app.get('/api/admin/auth-status', (req: Request, res: Response) => {
+    res.json({
+      success: true,
+      configured: isAdminConfigured()
+    });
+  });
+
+  // One-time bootstrap route if neither env vars nor persisted hash exist yet
+  app.post('/api/admin/setup', (req: Request, res: Response) => {
+    const db = loadDatabase();
+    if (isAdminConfigured(db)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Admin credentials are already configured.'
+      });
+    }
+
+    const rawName = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+    const rawPassword = typeof req.body?.password === 'string' ? req.body.password : '';
+    if (rawName.length < 2 || rawName.length > 64 || rawPassword.length < 4 || rawPassword.length > 128) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please enter a valid admin name and password.'
+      });
+    }
+
+    const normalizedName = rawName.toLowerCase();
+    const { salt, passwordHash } = hashAdminPassword(rawPassword);
+    db.adminAuth = {
+      username: normalizedName,
+      salt,
+      passwordHash,
+      updatedAt: new Date().toISOString()
+    };
+    saveDatabase(db);
+
+    const { token, session } = createAdminSession(normalizedName);
+    return res.json({
+      success: true,
+      token,
+      user: {
+        uid: `admin_${normalizedName}`,
+        name: normalizedName,
+        email: `${normalizedName}@admin.local`,
+        displayName: session.displayName,
+        role: 'admin'
+      }
+    });
+  });
+
+  // Protected Database API endpoint (Admin only)
+  app.get('/api/database', requireAdminAuth, (req: Request, res: Response) => {
     const db = loadDatabase();
     res.json({
       success: true,
@@ -175,30 +371,89 @@ async function startServer() {
     });
   });
 
-  // Admin Authentication endpoint
+  // Admin Authentication endpoint (server-verified scrypt / env credentials)
   app.post('/api/admin/login', (req: Request, res: Response) => {
-    const { adminId, password } = req.body;
-    const cleanId = (adminId || '').toString().trim().toLowerCase();
-    const validIds = ['admin', 'gmurugesh71@gmail.com', 'admin@aiexplorer.edu'];
-    const validPasswords = ['Admin@SSMIET2026!', 'admin', 'ssmiet2026', 'admin@ssmiet2026'];
+    const clientIp = getClientIp(req);
+    if (!checkLoginRateLimit(clientIp)) {
+      return res.status(429).json({
+        success: false,
+        error: 'Too many failed sign-in attempts. Please wait a few minutes and try again.'
+      });
+    }
 
-    if (validIds.includes(cleanId) && validPasswords.includes(password)) {
+    const rawName = typeof req.body?.name === 'string'
+      ? req.body.name
+      : typeof req.body?.adminId === 'string'
+        ? req.body.adminId
+        : '';
+    const rawPassword = typeof req.body?.password === 'string' ? req.body.password : '';
+
+    if (
+      rawName.trim().length === 0 ||
+      rawName.length > 128 ||
+      rawPassword.length === 0 ||
+      rawPassword.length > 128
+    ) {
+      recordFailedLogin(clientIp);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid admin name or password.'
+      });
+    }
+
+    if (!isAdminConfigured()) {
+      return res.status(503).json({
+        success: false,
+        error: 'Admin credentials are not configured yet. Complete initial setup first.'
+      });
+    }
+
+    const check = verifyAdminCredentials(rawName, rawPassword);
+    if (check.valid) {
+      clearLoginAttempts(clientIp);
+      const { token, session } = createAdminSession(check.username);
       return res.json({
         success: true,
+        token,
         user: {
-          uid: 'admin_ssmiet_2026',
-          email: cleanId === 'admin' ? 'gmurugesh71@gmail.com' : cleanId,
-          displayName: 'Administrator (SSMIET CSE)',
-          role: 'admin',
-          token: 'admin_session_' + Date.now()
+          uid: `admin_${check.username}`,
+          name: check.username,
+          email: `${check.username}@admin.local`,
+          displayName: session.displayName,
+          role: 'admin'
         }
       });
     }
 
+    recordFailedLogin(clientIp);
     return res.status(401).json({
       success: false,
-      error: 'Invalid credentials. Use Admin ID: admin and Password: Admin@SSMIET2026!'
+      error: 'Invalid admin name or password.'
     });
+  });
+
+  // Verify current admin session
+  app.get('/api/admin/me', requireAdminAuth, (req: Request, res: Response) => {
+    const session: AdminSession = (req as any).adminSession;
+    res.json({
+      success: true,
+      user: {
+        uid: `admin_${session.username}`,
+        name: session.username,
+        email: `${session.username}@admin.local`,
+        displayName: session.displayName,
+        role: 'admin'
+      }
+    });
+  });
+
+  // Revoke admin session
+  app.post('/api/admin/logout', (req: Request, res: Response) => {
+    const token = extractBearerToken(req);
+    if (token) {
+      adminSessions.delete(token);
+    }
+    res.json({ success: true });
   });
 
   app.post('/api/students', (req: Request, res: Response) => {
@@ -321,9 +576,10 @@ async function startServer() {
     res.json({ success: true, id: subId, stats: db.stats });
   });
 
-  // Admin session reset & clear database
-  app.post('/api/admin/clear-database', (req: Request, res: Response) => {
-    const { clearedBy } = req.body || {};
+  // Admin session reset & clear database (requires verified admin Bearer session)
+  app.post('/api/admin/clear-database', requireAdminAuth, (req: Request, res: Response) => {
+    const session: AdminSession = (req as any).adminSession;
+    const existingDb = loadDatabase();
     const freshDb: DatabaseStructure = {
       success: true,
       students: [],
@@ -340,10 +596,11 @@ async function startServer() {
         topPerformer: null
       },
       topPerformers: [],
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
+      ...(existingDb.adminAuth ? { adminAuth: existingDb.adminAuth } : {})
     };
     saveDatabase(freshDb);
-    console.log(`[Admin] Database cleared by ${clearedBy || 'administrator'} at ${new Date().toISOString()}`);
+    console.log(`[Admin] Database cleared by ${session.username} at ${new Date().toISOString()}`);
     res.json({
       success: true,
       message: 'Database reset successfully. Ready for new workshop entries.',
