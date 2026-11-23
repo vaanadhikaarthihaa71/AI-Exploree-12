@@ -470,6 +470,108 @@
       background: #6e44ff !important;
       color: #ffffff !important;
     }
+
+    /* ============================================================
+       WELCOME POP-OUT CARD — COMPACT VIEWPORT FIT + 1:1 VIDEO
+       ============================================================ */
+    #ssmietWelcomeModal.modal-backdrop {
+      padding: 0.75rem !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow-y: auto !important;
+    }
+
+    #ssmietWelcomeModal .ssmiet-welcome-dialog {
+      width: 100% !important;
+      max-width: min(340px, calc(100vw - 1.5rem)) !important;
+      max-height: calc(100vh - 1.5rem) !important;
+      max-height: calc(100dvh - 1.5rem) !important;
+      overflow-y: auto !important;
+      padding: 1.1rem 1.2rem !important;
+      margin: auto !important;
+      box-sizing: border-box !important;
+      border-radius: 18px !important;
+      text-align: center !important;
+    }
+
+    #ssmietWelcomeModal .ssmiet-headline {
+      font-size: clamp(1.15rem, 3.6vw, 1.38rem) !important;
+      line-height: 1.22 !important;
+      margin: 0.15rem 0 0.25rem !important;
+      padding: 0 1.4rem !important;
+    }
+
+    #ssmietWelcomeModal .ssmiet-dept-line {
+      font-size: 0.78rem !important;
+      font-weight: 700 !important;
+      margin: 0 0 0.7rem !important;
+      line-height: 1.35 !important;
+    }
+
+    .welcome-video-square {
+      width: min(215px, calc(100vw - 4.5rem));
+      aspect-ratio: 1 / 1;
+      margin: 0 auto 0.85rem;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #eef4ff;
+      border: 2px solid rgba(110, 68, 255, 0.18);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    }
+
+    .welcome-video-square video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    #ssmietWelcomeModal .modal-close-btn {
+      top: 0.55rem !important;
+      right: 0.55rem !important;
+      width: 28px !important;
+      height: 28px !important;
+      font-size: 1rem !important;
+    }
+
+    #ssmietWelcomeModal #btnModalEnterLab {
+      font-size: 0.94rem !important;
+      padding: 0.65rem 1rem !important;
+    }
+
+    .knowledge-thankyou-video-wrap {
+      width: min(230px, calc(100vw - 4rem));
+      aspect-ratio: 1 / 1;
+      margin: 0.5rem auto 1.25rem;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #eef4ff;
+      border: 2px solid rgba(110, 68, 255, 0.22);
+      box-shadow: 0 12px 28px rgba(110, 68, 255, 0.16);
+    }
+
+    .knowledge-thankyou-video-wrap video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .tab-btn[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed !important;
+      filter: grayscale(0.25);
+    }
+
+    @media (max-height: 600px) {
+      #ssmietWelcomeModal .ssmiet-welcome-dialog {
+        padding: 0.85rem 1rem !important;
+      }
+      .welcome-video-square {
+        width: 175px;
+        margin-bottom: 0.65rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -695,10 +797,9 @@
                   required 
                   autocomplete="off"
                   oninput="handleNameLiveInput(this.value)"
-                  onblur="if(this.value.trim().length >= 2) registerStudentLive(this.value.trim(), STATE.studentId);"
                 />
                 <button type="submit" class="btn btn-primary" id="btnCreateId">
-                  Draw My Card 🃏
+                  Done
                 </button>
               </div>
             </div>
@@ -1486,9 +1587,22 @@
             </div>
           </div>
           <h2 id="knowledgeResultHeadline">Knowledge Quiz Completed!</h2>
-          <p id="knowledgeResultSubtitle" style="font-size: 1.1rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+          <p id="knowledgeResultSubtitle" style="font-size: 1.1rem; color: var(--text-muted); margin-bottom: 1rem;">
             Here is your official session score based on today's AI & tech concepts:
           </p>
+
+          <!-- Knowledge Quiz Completion Thank-You Video -->
+          <div class="knowledge-thankyou-video-wrap">
+            <video
+              id="knowledgeThankYouVideo"
+              src="/assets/aistudio/Untitled_video__4__gwr_video_mvp_c252a539.mp4"
+              playsinline
+              loop
+              controls
+              preload="auto"
+              aria-label="Thank you celebration video"
+            ></video>
+          </div>
 
           <!-- Score & Badge Box -->
           <div class="badge-display-box">
@@ -1529,46 +1643,38 @@
   </main>
 
   <!-- ============================================================
-       SSMIET CELEBRATORY WELCOME GREETING MODAL
-       Triggered when clicking the card or ID chip
+       SSMIET COMPACT WELCOME POP-OUT CARD
+       Triggered when clicking Done or the Explorer Card
        ============================================================ -->
   <div id="ssmietWelcomeModal" class="modal-backdrop" onclick="closeSSMIETModal(event)" role="dialog" aria-modal="true" aria-label="Welcome from SSMIET Department of CSE">
     <div class="ssmiet-welcome-dialog" onclick="event.stopPropagation()">
       <button class="modal-close-btn" onclick="closeSSMIETModal()" aria-label="Close welcome message">×</button>
-      
-      <!-- Institutional Crest -->
-      <div class="ssmiet-crest-wrap" aria-hidden="true">🏛️</div>
-      <div class="ssmiet-college-tag" id="ssmietCollegeTag">SSM INSTITUTE OF ENGINEERING AND TECHNOLOGY</div>
+
+      <!-- 1. Vanakkam Line -->
       <h3 class="ssmiet-headline" id="ssmietGreetingTitle">Vanakkam, Explorer! 🌟</h3>
+
+      <!-- 2. Department of CSE Line -->
       <div class="ssmiet-dept-line" id="ssmietDeptLine">
-        Department of Computer Science and Engineering (CSE) · Dindigul
+        Department of Computer Science and Engineering (CSE) · SSMIET
       </div>
 
-      <!-- Personalized Greeting Letter: Simple & Elegant -->
-      <div class="ssmiet-greeting-body" id="ssmietGreetingBody">
-        <p id="ssmietBodyP1">
-          <strong id="ssmietStudentNameHighlight">Dear Student</strong>, the <strong>Department of CSE at SSMIET</strong> warmly welcomes you to today's AI awareness workshop!
-        </p>
-        <p id="ssmietBodyP2">
-          Explore 6 groundbreaking AI tools, master prompt engineering, and discover where computer science can take your future.
-        </p>
-        <p id="ssmietBodyP3" style="color: var(--accent-teal); font-weight: 700;">
-          Enjoy the hands-on session and build something awesome today!
-        </p>
+      <!-- 3. 1:1 Vanakkam Greeting Video -->
+      <div class="welcome-video-square">
+        <video
+          id="welcomeVanakkamVideo"
+          src="/assets/aistudio/Video_Project_4_5a015f7f.mp4"
+          playsinline
+          loop
+          controls
+          preload="auto"
+          aria-label="Vanakkam welcome video"
+        ></video>
       </div>
 
-      <!-- Compact Meta Chip -->
-      <div style="display: flex; justify-content: center; align-items: center; gap: 0.75rem; margin-bottom: 1.15rem; flex-wrap: wrap;">
-        <span class="badge-id-code" id="modalBadgeIdCode" style="margin-bottom: 0; font-size: 1rem; padding: 0.2rem 0.75rem;">ID: EXPL-2026</span>
-        <span id="modalLabPassText" style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">
-          Lab Pass · Class 12 Batch 2026
-        </span>
-      </div>
-
-      <!-- Call to Action: Start Prompt Gym -->
+      <!-- 4. Start Prompt Gym CTA -->
       <div>
-        <button class="btn btn-yellow" id="btnModalEnterLab" style="font-size: 1.05rem; width: 100%; justify-content: center; padding: 0.8rem;" onclick="proceedFromWelcomeToGym()">
-          Enter the Lab & Start Prompt Gym 🚀
+        <button class="btn btn-yellow" id="btnModalEnterLab" style="width: 100%; justify-content: center;" onclick="proceedFromWelcomeToGym()">
+          Start Prompt Gym 🚀
         </button>
       </div>
     </div>
@@ -3776,9 +3882,12 @@
     let studentRegDebounceTimer = null;
 
     function registerStudentLive(name, id) {
-      if (!name || name.trim().length < 2) return;
-      const cleanName = name.trim().slice(0, 18);
-      const studentId = id || STATE.studentId || generateExplorerId(cleanName);
+      // ONLY register confirmed students with an assigned Explorer ID (from clicking Dealt Card)
+      if (!name || !id) return;
+      const cleanName = name.replace(/\s+/g, " ").trim().slice(0, 18);
+      if (cleanName.length < 1) return;
+      const studentId = String(id).trim();
+      if (!studentId || studentId === "EXP-0000" || studentId === "ANON-0000") return;
 
       const payload = {
         studentName: cleanName,
@@ -4001,8 +4110,11 @@
       const fb = window.AI_EXPLORER_FIREBASE;
       if (fb) {
         try {
-          const sid = record.studentId || STATE.studentId || "EXP-0000";
-          const sname = record.studentName || STATE.studentName || "Explorer";
+          const sid = (record.studentId || STATE.studentId || "").trim();
+          const sname = (record.studentName || STATE.studentName || "").trim();
+          if (!sid || !sname || sid === "EXP-0000" || sid === "ANON-0000") {
+            return false;
+          }
 
           if (record.type === "student_registered") {
             await fb.saveStudentRecord({
@@ -4011,10 +4123,10 @@
               school: record.school || "",
               district: record.district || "",
               classGrade: record.classGrade || "12th",
-              stream: record.stream || "PCM",
+              stream: record.stream || "",
               registeredAt: record.createdAt || new Date().toISOString(),
               status: "Joined Workshop ⚡",
-              overallProgress: 17
+              guideCompleted: true
             });
           } else if (record.type === "prompt_gym") {
             await fb.savePromptGymSubmission({
@@ -4024,6 +4136,23 @@
               score: record.promptScore || 5,
               school: record.school || ""
             });
+          } else if (record.type === "tools_completed") {
+            if (typeof fb.saveToolsCompletion === "function") {
+              await fb.saveToolsCompletion({
+                studentId: sid,
+                studentName: sname,
+                toolsCount: record.toolsCount || 7
+              });
+            }
+          } else if (record.type === "resistant_completed") {
+            if (typeof fb.saveResistantFieldsCompletion === "function") {
+              await fb.saveResistantFieldsCompletion({
+                studentId: sid,
+                studentName: sname,
+                fieldsCount: record.fieldsCount || 5,
+                exploredFields: record.exploredFields || []
+              });
+            }
           } else if (record.type === "career_profile") {
             await fb.saveCareerAssessment({
               studentId: sid,
@@ -4132,6 +4261,12 @@
               timestamp: serverTs
             }).catch(e => console.warn("Badge write:", e));
 
+          } else if (record.type === "tools_completed") {
+            studentUpdate.aiToolsCompleted = true;
+            studentUpdate.aiToolsCount = record.toolsCount || 7;
+          } else if (record.type === "resistant_completed") {
+            studentUpdate.aiResistantCompleted = true;
+            studentUpdate.aiResistantCount = record.fieldsCount || 5;
           } else if (record.type === "career_profile") {
             studentUpdate.careerCompleted = true;
             if (Array.isArray(record.topMatches) && record.topMatches[0]) {
@@ -4465,6 +4600,9 @@
 
               const nameInput = document.getElementById("studentNameInput");
               if (nameInput) nameInput.value = "";
+              closeSSMIETModal();
+              syncTabLocks();
+              switchTab("guide");
               updateProgressDisplay();
               showToast("New workshop session started by Admin! Please enter your name to register ⚡");
             }
@@ -4520,8 +4658,8 @@
         STATE.unlockedToolIndex = STATE.maxUnlockedTool;
 
         applyCreatedIdUI(savedName, savedId);
-        unlockTabs();
       }
+      syncTabLocks();
     }
 
     /* ============================================================
@@ -4539,48 +4677,45 @@
     }
 
     function handleNameLiveInput(val) {
+      // Visual card preview ONLY — never write to the database while typing letters!
       const nameEl = document.getElementById("badgeStudentName");
       const cleanVal = val.trim();
       if (nameEl) {
         nameEl.textContent = cleanVal ? cleanVal.toUpperCase() : "YOUR NAME";
-      }
-      if (cleanVal.length >= 3) {
-        clearTimeout(studentRegDebounceTimer);
-        studentRegDebounceTimer = setTimeout(() => {
-          registerStudentLive(cleanVal, STATE.studentId);
-        }, 600);
       }
     }
 
     function handleCreateId(event) {
       if (event) event.preventDefault();
       const input = document.getElementById("studentNameInput");
-      const rawName = input.value.trim();
+      const rawName = (input ? input.value : "").replace(/\s+/g, " ").trim();
       if (!rawName) return;
 
       const safeName = rawName.slice(0, 18);
-      const generatedId = generateExplorerId(safeName);
+      // Reuse existing session studentId if redrawing/correcting name so 1 student = 1 DB entry
+      const existingId = STATE.studentId || safeStorageGet("ai_explorer_id");
+      const studentId = (existingId && existingId !== "EXP-0000" && existingId !== "ANON-0000")
+        ? existingId
+        : generateExplorerId(safeName);
 
       STATE.studentName = safeName;
-      STATE.studentId = generatedId;
+      STATE.studentId = studentId;
       STATE.completedSections.add("guide");
 
       safeStorageSet("ai_explorer_name", safeName);
-      safeStorageSet("ai_explorer_id", generatedId);
+      safeStorageSet("ai_explorer_id", studentId);
       safeStorageSet("ai_explorer_completed", Array.from(STATE.completedSections));
 
-      // Register student live immediately with the server database & admin
-      registerStudentLive(safeName, generatedId);
+      // Store the EXACT confirmed name shown right after "Vanakkam" in the popping card
+      registerStudentLive(safeName, studentId);
 
-      applyCreatedIdUI(safeName, generatedId);
+      applyCreatedIdUI(safeName, studentId);
       triggerCardDealAnimation();
-      unlockTabs();
+      syncTabLocks();
       updateProgressDisplay();
 
-      // Automatically open the SSMIET welcome greeting
-      setTimeout(() => {
-        openSSMIETWelcomeModal();
-      }, 500);
+      // Pop out the compact Welcome Card immediately on clicking Done
+      openSSMIETWelcomeModal();
     }
 
     function triggerCardDealAnimation() {
@@ -4601,7 +4736,7 @@
       const input = document.getElementById("studentNameInput");
       if (input) input.value = name;
       const btn = document.getElementById("btnCreateId");
-      if (btn) btn.textContent = "Redraw Card 🃏";
+      if (btn) btn.textContent = "Done";
 
       // Show action area with Start Prompt Gym button
       const actionArea = document.getElementById("deckActionArea");
@@ -4614,9 +4749,6 @@
         chip.style.display = "inline-flex";
         chip.onclick = handleCardClick;
       }
-
-      const modalIdEl = document.getElementById("modalBadgeIdCode");
-      if (modalIdEl) modalIdEl.textContent = `ID: ${id}`;
     }
 
     function handleCardClick() {
@@ -4626,7 +4758,7 @@
           handleCreateId();
           return;
         } else {
-          showToast("Please type your name above to create your card!");
+          showToast("Please type your name above and click Done!");
           if (input) input.focus();
           return;
         }
@@ -4634,46 +4766,119 @@
       openSSMIETWelcomeModal();
     }
 
+    function playVideoSafely(videoEl) {
+      if (!videoEl) return;
+      try {
+        videoEl.currentTime = 0;
+        videoEl.muted = false;
+        const playPromise = videoEl.play();
+        if (playPromise && typeof playPromise.catch === "function") {
+          playPromise.catch(() => {
+            videoEl.muted = true;
+            videoEl.play().catch(() => {});
+          });
+        }
+      } catch (err) {}
+    }
+
+    function stopVideoSafely(videoEl) {
+      if (!videoEl) return;
+      try {
+        videoEl.pause();
+        videoEl.currentTime = 0;
+      } catch (err) {}
+    }
+
     function openSSMIETWelcomeModal() {
       const modal = document.getElementById("ssmietWelcomeModal");
       const titleEl = document.getElementById("ssmietGreetingTitle");
-      const nameHighlight = document.getElementById("ssmietStudentNameHighlight");
-      const modalId = document.getElementById("modalBadgeIdCode");
+      const videoEl = document.getElementById("welcomeVanakkamVideo");
 
       const studentName = STATE.studentName || "Explorer";
       if (titleEl) titleEl.textContent = `Vanakkam, ${studentName}! 🌟`;
-      if (nameHighlight) nameHighlight.textContent = `Dear ${studentName}`;
-      if (modalId) modalId.textContent = `ID: ${STATE.studentId || "EXPL-2026"}`;
 
       if (modal) modal.classList.add("active");
 
-      playCelebrationChime();
+      playVideoSafely(videoEl);
       triggerConfetti();
     }
 
     function closeSSMIETModal(e) {
       const modal = document.getElementById("ssmietWelcomeModal");
+      const videoEl = document.getElementById("welcomeVanakkamVideo");
+      stopVideoSafely(videoEl);
       if (modal) modal.classList.remove("active");
     }
 
     // Called from SSMIET Welcome Modal CTA -> advances to Prompt Gym
     function proceedFromWelcomeToGym() {
       closeSSMIETModal();
-      unlockTabs();
       STATE.completedSections.add("guide");
       safeStorageSet("ai_explorer_completed", Array.from(STATE.completedSections));
+      syncTabLocks();
       updateProgressDisplay();
       showToast("Welcome aboard! Let's enter the Prompt Gym.");
       switchTab("gym");
     }
 
-    // Unlocks tabs after ID creation
-    function unlockTabs() {
-      const tabIds = ["tab-gym", "tab-tools", "tab-resistant", "tab-career", "tab-knowledge"];
-      tabIds.forEach(id => {
-        const btn = document.getElementById(id);
-        if (btn) btn.removeAttribute("disabled");
+    /* ============================================================
+       STRICT SEQUENTIAL 6-SECTION UNLOCKING
+       Each section unlocks ONLY when the previous section is completed
+       ============================================================ */
+    const SECTION_ORDER = ["guide", "gym", "tools", "resistant", "career", "knowledge"];
+    const SECTION_LABELS = {
+      guide: "1. Guide",
+      gym: "2. Prompt Gym",
+      tools: "3. AI Tools",
+      resistant: "4. AI-Resistant Fields",
+      career: "5. Career Profile Quiz",
+      knowledge: "6. Knowledge Quiz"
+    };
+
+    function isSectionUnlocked(tabKey) {
+      const idx = SECTION_ORDER.indexOf(tabKey);
+      if (idx <= 0) return true; // Guide is always unlocked
+      if (!STATE.studentId) return false;
+      for (let i = 0; i < idx; i++) {
+        if (!STATE.completedSections.has(SECTION_ORDER[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function getBlockingSection(tabKey) {
+      const idx = SECTION_ORDER.indexOf(tabKey);
+      if (idx <= 0) return null;
+      if (!STATE.studentId) return "guide";
+      for (let i = 0; i < idx; i++) {
+        if (!STATE.completedSections.has(SECTION_ORDER[i])) {
+          return SECTION_ORDER[i];
+        }
+      }
+      return null;
+    }
+
+    function syncTabLocks() {
+      SECTION_ORDER.forEach(key => {
+        const btn = document.getElementById(`tab-${key}`);
+        if (!btn) return;
+        const unlocked = isSectionUnlocked(key);
+        if (unlocked) {
+          btn.removeAttribute("disabled");
+          btn.removeAttribute("title");
+        } else {
+          btn.setAttribute("disabled", "disabled");
+          const blocker = getBlockingSection(key);
+          const reqName = SECTION_LABELS[blocker] || "previous section";
+          btn.setAttribute("title", `Complete ${reqName} first to unlock`);
+        }
       });
+    }
+
+    // Backwards-compatible alias
+    function unlockTabs() {
+      syncTabLocks();
     }
 
     // Guide button action -> opens Prompt Gym
@@ -4684,19 +4889,31 @@
     /* ============================================================
        TAB NAVIGATION SYSTEM
        Order: Guide, Prompt Gym, AI Tools Explorer, AI-Resistant Fields, Career Profile Quiz, Knowledge Quiz
-       Only one section visible at a time
+       Only one section visible at a time · Strict sequential unlocking
        ============================================================ */
     function switchTab(targetTab) {
       if (targetTab !== "guide" && !STATE.studentId) {
-        showToast("Please create your Explorer ID first!");
+        showToast("Please enter your name and click Done first! 🔒");
         switchTab("guide");
         return;
       }
 
+      if (!isSectionUnlocked(targetTab)) {
+        const blocker = getBlockingSection(targetTab);
+        const reqLabel = SECTION_LABELS[blocker] || "the previous section";
+        const targetLabel = SECTION_LABELS[targetTab] || targetTab;
+        showToast(`Complete ${reqLabel} first to unlock ${targetLabel}! 🔒`);
+        return;
+      }
+
+      // Pause Knowledge Quiz completion video if leaving Knowledge tab
+      if (STATE.currentTab === "knowledge" && targetTab !== "knowledge") {
+        stopVideoSafely(document.getElementById("knowledgeThankYouVideo"));
+      }
+
       STATE.currentTab = targetTab;
 
-      const tabKeys = ["guide", "gym", "tools", "resistant", "career", "knowledge"];
-      tabKeys.forEach(key => {
+      SECTION_ORDER.forEach(key => {
         const tabBtn = document.getElementById(`tab-${key}`);
         const viewPanel = document.getElementById(`view-${key}`);
         if (tabBtn) {
@@ -4746,6 +4963,8 @@
         }
       });
 
+      syncTabLocks();
+
       const pct = Math.round((completedCount / steps.length) * 100);
       const fill = document.getElementById("progressBarFill");
       const pctText = document.getElementById("progressPctText");
@@ -4759,7 +4978,7 @@
       if (label) {
         const isTa = (STATE.language || STATE.quizLanguage) === "ta";
         if (!STATE.studentId) {
-          label.textContent = isTa ? "படி 0 / 6 · தொடங்க அடையாள அட்டை உருவாக்குக" : "Step 0 of 6 · Create Explorer ID to begin";
+          label.textContent = isTa ? "படி 0 / 6 · தொடங்க பெயரை உள்ளிட்டு Done அழுத்தவும்" : "Step 0 of 6 · Enter name & click Done to begin";
         } else if (completedCount === 6) {
           label.textContent = isTa ? "🎉 அனைத்து 6 பகுதிகளும் நிறைவடைந்தன! ஆய்வகம் மாஸ்டர் செய்யப்பட்டது!" : "🎉 All 6 sections completed! Lab Mastered!";
         } else {
@@ -5249,6 +5468,10 @@
     }
 
     function goToCareerProfileQuiz() {
+      if (!STATE.completedSections.has("resistant") && STATE.openedResistantCards.size < 5) {
+        showToast("Explore at least 5 AI-Resistant Fields first to unlock Career Profile Quiz! 🔒");
+        return;
+      }
       STATE.completedSections.add("resistant");
       safeStorageSet("ai_explorer_completed", Array.from(STATE.completedSections));
       updateProgressDisplay();
@@ -5257,7 +5480,8 @@
         type: "resistant_completed",
         studentId: STATE.studentId,
         studentName: STATE.studentName,
-        fieldsCount: (typeof RESISTANT_FIELDS !== "undefined" && Array.isArray(RESISTANT_FIELDS)) ? RESISTANT_FIELDS.length : 21
+        fieldsCount: Math.max(STATE.openedResistantCards.size, 5),
+        exploredFields: Array.from(STATE.openedResistantCards)
       }, true);
 
       showToast("Moving to Career Profile Quiz...");
@@ -5400,9 +5624,20 @@
         }
         if (banner) banner.style.display = "block";
 
+        const wasAlreadyComplete = STATE.completedSections.has("resistant");
         STATE.completedSections.add("resistant");
         safeStorageSet("ai_explorer_completed", Array.from(STATE.completedSections));
         updateProgressDisplay();
+
+        if (!wasAlreadyComplete && STATE.studentId) {
+          saveSubmission({
+            type: "resistant_completed",
+            studentId: STATE.studentId,
+            studentName: STATE.studentName,
+            fieldsCount: count,
+            exploredFields: Array.from(STATE.openedResistantCards)
+          }, true);
+        }
       }
     }
 
@@ -6371,13 +6606,14 @@
       STATE.completedSections.add("knowledge");
       safeStorageSet("ai_explorer_completed", Array.from(STATE.completedSections));
       updateProgressDisplay();
-      playCelebrationChime();
+      playVideoSafely(document.getElementById("knowledgeThankYouVideo"));
       triggerConfetti();
 
       resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function retakeKnowledgeQuiz() {
+      stopVideoSafely(document.getElementById("knowledgeThankYouVideo"));
       initKnowledgeQuiz();
     }
 
@@ -6411,20 +6647,20 @@
         idStep1Desc: 'Type your name below to unlock your interactive lab deck and generate your digital pass.',
         idNameLabel: 'YOUR FULL NAME / INITIALS',
         namePlaceholder: 'e.g., Aravind S / Priya K',
-        btnCreateId: 'Dealt Card · Unlock Lab Pass 🚀',
+        btnCreateId: 'Done',
         badgeInstPill: 'SSMIET CSE · CLASS 12',
         cardClickHint: '💡 Tap card anytime to re-open your SSMIET Welcome Greeting',
         badgeFooter1: 'SSM INSTITUTE OF ENGG & TECH',
         badgeFooter2: 'DEPARTMENT OF COMPUTER SCIENCE',
         btnStartGym: 'Start Prompt Gym →',
         ssmietCollegeTag: 'SSM INSTITUTE OF ENGINEERING AND TECHNOLOGY',
-        ssmietDeptLine: 'DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING (CSE) · DINDIGUL',
-        ssmietGreetingTitle: 'Warm Welcome, Future Engineers & Innovators!',
-        ssmietBodyP1: 'On behalf of the <strong>Department of Computer Science and Engineering (CSE) at SSMIET</strong>, we are thrilled to welcome you to the <em>AI Explorer Workshop</em>. As you prepare to complete Class 12, the choices you make this year will shape the next decade of your life.',
-        ssmietBodyP2: 'Artificial Intelligence is accelerating every industry, but it will never replace creative, critical-thinking human engineers who master how to build and orchestrate it. Our mission at SSMIET CSE is to nurture curious minds into world-class engineers, founders, and technological leaders.',
-        ssmietBodyP3: 'Explore each section with curiosity, test breakthrough AI tools, master prompt recipes, and discover career paths that are resilient in the age of AI. Your future begins today!',
+        ssmietDeptLine: 'Department of Computer Science and Engineering (CSE) · SSMIET',
+        ssmietGreetingTitle: 'Vanakkam, Explorer! 🌟',
+        ssmietBodyP1: '<strong>Department of CSE, SSMIET</strong> warmly welcomes you to the <em>AI Explorer Workshop</em>!',
+        ssmietBodyP2: 'Explore 6 AI tools, master prompt engineering, discover AI-resistant careers, and take the quiz.',
+        ssmietBodyP3: 'Enjoy the hands-on session — your future in tech starts today!',
         modalLabPassText: 'Lab Pass · Class 12 Batch 2026',
-        btnModalEnterLab: 'Enter the Lab & Start Prompt Gym 🚀',
+        btnModalEnterLab: 'Start Prompt Gym 🚀',
         gymIntroTitle: 'Section 2 · Prompt Engineering Gym',
         gymIntroSub: 'AI is only as good as the prompt you give it. Master the 5-ingredient recipe to turn vague answers into precise, high-grade outputs.',
         compareTitle: 'Part 1 · Weak vs Strong Prompts (See the Difference)',
@@ -6528,20 +6764,20 @@
         idStep1Desc: 'உங்கள் ஊடாடும் ஆய்வக அட்டைகளைத் திறந்து டிஜிட்டல் பாஸைப் பெற உங்கள் பெயரை உள்ளிடுங்கள்.',
         idNameLabel: 'உங்கள் முழு பெயர் / முதலெழுத்து',
         namePlaceholder: 'எ.கா. அரவிந்த் சு / பிரியா கு',
-        btnCreateId: 'அடையாள அட்டை பெற்று ஆய்வகத்தில் நுழையுங்கள் 🚀',
+        btnCreateId: 'Done',
         badgeInstPill: 'SSMIET CSE · 12-ஆம் வகுப்பு',
         cardClickHint: '💡 உங்கள் SSMIET வரவேற்புக் குறிப்பைக் காண எப்போது வேண்டுமானாலும் இந்த அட்டையைத் தட்டவும்',
         badgeFooter1: 'எஸ்எஸ்எம் இன்ஸ்டிடியூட் ஆப் இன்ஜினியரிங் & டெக்னாலஜி',
         badgeFooter2: 'கணினி அறிவியல் மற்றும் பொறியியல் துறை (CSE)',
         btnStartGym: 'ப்ராம்ப்ட் ஜிம் தொடங்குக →',
         ssmietCollegeTag: 'எஸ்எஸ்எம் இன்ஸ்டிடியூட் ஆப் இன்ஜினியரிங் அண்ட் டெக்னாலஜி',
-        ssmietDeptLine: 'கணினி அறிவியல் மற்றும் பொறியியல் துறை (CSE) · திண்டுக்கல்',
-        ssmietGreetingTitle: 'எதிர்கால பொறியாளர்களே & கண்டுபிடிப்பாளர்களே, நல்வரவு!',
-        ssmietBodyP1: '<strong>SSMIET கணினி அறிவியல் மற்றும் பொறியியல் துறையின் (CSE)</strong> சார்பில் <em>AI Explorer பயிற்சி பட்டறைக்கு</em> உங்களை அன்புடன் வரவேற்கிறோம். 12-ஆம் வகுப்பை நிறைவு செய்யும் இந்த தருணத்தில் நீங்கள் எடுக்கும் முடிவுகள் உங்கள் வாழ்வின் அடுத்த பத்தாண்டுகளை வடிவமைக்கும்.',
-        ssmietBodyP2: 'செயற்கை நுண்ணறிவு (AI) எல்லா துறைகளையும் மாற்றியமைத்து வருகிறது. ஆனால் அதை உருவாக்கி வழிநடத்தும் மனித பொறியாளர்களை AI-ஆல் ஒருபோதும் மாற்ற முடியாது. ஆர்வமுள்ள மாணவர்களை உலகத்தரம் வாய்ந்த பொறியாளர்களாகவும், தலைவர்களாகவும் உருவாக்குவதே SSMIET CSE-ன் குறிக்கோள்.',
-        ssmietBodyP3: 'ஆர்வத்துடன் ஒவ்வொரு பகுதியையும் பாருங்கள், புதிய AI கருவிகளைப் பரிசோதியுங்கள், ப்ராம்ப்ட் சூத்திரங்களை மாஸ்டர் செய்யுங்கள் மற்றும் எதிர்காலத்திலும் நிலைத்து நிற்கும் சிறந்த வேலைவாய்ப்புகளைக் கண்டறியுங்கள்!',
+        ssmietDeptLine: 'கணினி அறிவியல் மற்றும் பொறியியல் துறை (CSE) · SSMIET',
+        ssmietGreetingTitle: 'வணக்கம், மாணவரே! 🌟',
+        ssmietBodyP1: '<strong>SSMIET கணினி அறிவியல் துறை (CSE)</strong> சார்பில் <em>AI Explorer பயிற்சிக்கு</em> உங்களை அன்புடன் வரவேற்கிறோம்!',
+        ssmietBodyP2: '6 AI கருவிகளை ஆராயுங்கள், ப்ராம்ப்ட் சூத்திரத்தை கற்று, AI-எதிர்ப்பு பொறியியல் துறைகளை அறிந்துகொள்ளுங்கள்.',
+        ssmietBodyP3: 'சிறப்பாகப் பங்கேற்று உங்கள் எதிர்காலத் தொழில்நுட்பப் பாதையைத் தொடங்குங்கள்!',
         modalLabPassText: 'ஆய்வக அனுமதி அட்டை · 12-ஆம் வகுப்பு 2026',
-        btnModalEnterLab: 'ஆய்வகத்தில் நுழைந்து ப்ராம்ப்ட் ஜிம் தொடங்குக 🚀',
+        btnModalEnterLab: 'ப்ராம்ப்ட் ஜிம் தொடங்குக 🚀',
         gymIntroTitle: 'பகுதி 2 · ப்ராம்ப்ட் இன்ஜினியரிங் ஜிம்',
         gymIntroSub: 'நாம் தரும் ப்ராம்ப்டின் தரத்தைப் பொறுத்தே AI பதிலளிக்கிறது. தெளிவற்ற பதில்களை துல்லியமான சிறந்த விடைகளாக மாற்ற 5-பகுதி சூத்திரத்தை மாஸ்டர் செய்யுங்கள்.',
         compareTitle: 'பாகம் 1 · பலவீனமான vs வலுவான ப்ராம்ப்ட்கள் (வேறுபாட்டை உணருங்கள்)',
@@ -6682,7 +6918,7 @@
       // SSMIET Modal
       setText("ssmietCollegeTag", dict.ssmietCollegeTag);
       setText("ssmietDeptLine", dict.ssmietDeptLine);
-      setText("ssmietGreetingTitle", dict.ssmietGreetingTitle);
+      setText("ssmietGreetingTitle", STATE.studentName ? `Vanakkam, ${STATE.studentName}! 🌟` : dict.ssmietGreetingTitle);
       setHTML("ssmietBodyP1", dict.ssmietBodyP1);
       setHTML("ssmietBodyP2", dict.ssmietBodyP2);
       setHTML("ssmietBodyP3", dict.ssmietBodyP3);

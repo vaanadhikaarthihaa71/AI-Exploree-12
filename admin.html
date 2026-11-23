@@ -812,13 +812,13 @@
         <span style="font-size: 2.5rem;">👑</span>
         <div>
           <div style="font-family: var(--font-mono); font-size: 0.76rem; color: var(--admin-gold); font-weight: 800; letter-spacing: 0.05em;">
-            CURRENT TOP SCORER SPOTLIGHT
+            🏆 KNOWLEDGE QUIZ TOP SCORER SPOTLIGHT
           </div>
           <div style="font-size: 1.25rem; font-weight: 800; color: #FFFFFF;" id="spotlightStudentName">
-            Awaiting student submissions...
+            Awaiting Knowledge Quiz submissions...
           </div>
           <div style="font-size: 0.82rem; color: #94A3B8;" id="spotlightStudentMeta">
-            Real-time score tracking active across workshop sessions
+            Top scorer of the Knowledge Quiz updates live in real time
           </div>
         </div>
       </div>
@@ -1044,15 +1044,17 @@
             <option value="week">Past 7 Days</option>
           </select>
 
-          <select id="studentActivityFilter" class="admin-select" style="max-width: 180px;" onchange="filterStudentsTable()">
+          <select id="studentActivityFilter" class="admin-select" style="max-width: 200px;" onchange="filterStudentsTable()">
             <option value="all">All Activities</option>
-            <option value="quiz_done">Knowledge Quiz Done</option>
-            <option value="career_done">Career Profile Done</option>
             <option value="gym_done">Prompt Gym Done</option>
+            <option value="tools_done">AI Tools Done</option>
+            <option value="resistant_done">AI-Resistant Fields Done</option>
+            <option value="career_done">Career Profile Done</option>
+            <option value="quiz_done">Knowledge Quiz Done</option>
           </select>
 
           <select id="studentSortBy" class="admin-select" style="max-width: 180px;" onchange="filterStudentsTable()">
-            <option value="score_desc">Sort: Highest Score</option>
+            <option value="score_desc">Sort: Highest Quiz Score</option>
             <option value="progress_desc">Sort: Highest Progress</option>
             <option value="name_asc">Sort: Name (A-Z)</option>
             <option value="date_desc">Sort: Newest First</option>
@@ -1066,23 +1068,20 @@
           <table class="admin-table">
             <thead>
               <tr>
-                <th>Student ID</th>
-                <th>Student Name</th>
-                <th>Email</th>
-                <th>Registration Date</th>
-                <th>Last Active</th>
-                <th>Quiz Attempts</th>
-                <th>Total Score</th>
-                <th>Accuracy</th>
-                <th>Activities</th>
-                <th>Badges</th>
+                <th>Explorer ID</th>
+                <th>Registered Name</th>
+                <th>Prompt Gym</th>
+                <th>AI Tools</th>
+                <th>AI-Resistant Fields</th>
+                <th>Career Profile Quiz Details</th>
+                <th>Knowledge Quiz Score</th>
                 <th>Progress</th>
-                <th style="text-align: right;">Action</th>
+                <th style="text-align: right;">Dossier</th>
               </tr>
             </thead>
             <tbody id="studentsTableBody">
               <tr>
-                <td colspan="12" style="text-align: center; color: #94A3B8; padding: 2.5rem;">
+                <td colspan="9" style="text-align: center; color: #94A3B8; padding: 2.5rem;">
                   Loading students from Firestore...
                 </td>
               </tr>
@@ -2203,19 +2202,22 @@
         document.getElementById("statAvgPct").innerText = "Awaiting quiz attempts";
       }
 
-      // 6. Highest Score & Top Performer
-      const sortedByScore = [...dbQuizAttempts].sort((a, b) => (b.score || 0) - (a.score || 0));
-      const topAttempt = sortedByScore[0];
+      // 6. Highest Score & Top Scorer of Knowledge Quiz (with tie-breaking)
+      const rankedQuizLeaders = getRankedLeaderboardList();
+      const topAttempt = rankedQuizLeaders[0];
       if (topAttempt && typeof topAttempt.score === "number") {
         document.getElementById("statHighScore").innerText = `${topAttempt.score} / 15`;
         document.getElementById("statHighScoreName").innerText = `👑 ${topAttempt.studentName}`;
 
         document.getElementById("spotlightStudentName").innerText = `${topAttempt.studentName} (${topAttempt.studentId})`;
-        document.getElementById("spotlightStudentMeta").innerText = `Class 12th Master · Scored ${topAttempt.score}/15 (${topAttempt.percentage || 0}%) in ${topAttempt.timeFormatted || 'quick pace'}`;
-        document.getElementById("spotlightScoreBox").innerText = `Score: ${topAttempt.score} / 15 (${topAttempt.percentage || 0}%)`;
+        document.getElementById("spotlightStudentMeta").innerText = `Knowledge Quiz Top Scorer · ${topAttempt.score}/15 (${topAttempt.percentage || Math.round((topAttempt.score / 15) * 100)}%) in ${topAttempt.timeFormatted || 'quick pace'}`;
+        document.getElementById("spotlightScoreBox").innerText = `👑 Top Score: ${topAttempt.score} / 15 (${topAttempt.percentage || Math.round((topAttempt.score / 15) * 100)}%)`;
       } else {
         document.getElementById("statHighScore").innerText = "0 / 15";
         document.getElementById("statHighScoreName").innerText = "No attempts yet";
+        document.getElementById("spotlightStudentName").innerText = "Awaiting Knowledge Quiz submissions...";
+        document.getElementById("spotlightStudentMeta").innerText = "Top scorer of the Knowledge Quiz updates live in real time";
+        document.getElementById("spotlightScoreBox").innerText = "Score: -- / 15";
       }
 
       // 7. Badges
@@ -2377,16 +2379,24 @@
         if (dateFilter === "week" && (now - regTime) > oneWeek) return false;
 
         // Activity
-        if (actFilter === "quiz_done" && !(s.quizScore !== undefined || s.totalQuizAttempts > 0)) return false;
-        if (actFilter === "career_done" && !s.careerCompleted) return false;
-        if (actFilter === "gym_done" && !s.promptGymCompleted) return false;
+        const hasGym = !!s.promptGymCompleted || dbPromptSubmissions.some(p => p.studentId === s.studentId);
+        const hasTools = !!s.aiToolsCompleted || dbEngagementMetrics.some(m => m.studentId === s.studentId && m.sectionKey === "tools");
+        const hasResistant = !!s.aiResistantCompleted || dbEngagementMetrics.some(m => m.studentId === s.studentId && m.sectionKey === "resistant");
+        const hasCareer = !!s.careerCompleted || dbCareerAssessments.some(c => c.studentId === s.studentId);
+        const hasQuiz = !!s.knowledgeQuizCompleted || typeof s.quizScore === "number" || dbQuizAttempts.some(q => q.studentId === s.studentId);
+
+        if (actFilter === "gym_done" && !hasGym) return false;
+        if (actFilter === "tools_done" && !hasTools) return false;
+        if (actFilter === "resistant_done" && !hasResistant) return false;
+        if (actFilter === "career_done" && !hasCareer) return false;
+        if (actFilter === "quiz_done" && !hasQuiz) return false;
 
         return true;
       });
 
       // Sorting
       filtered.sort((a, b) => {
-        if (sortBy === "score_desc") return (b.quizScore || b.totalScore || 0) - (a.quizScore || a.totalScore || 0);
+        if (sortBy === "score_desc") return (b.quizScore ?? -1) - (a.quizScore ?? -1);
         if (sortBy === "progress_desc") return (b.overallProgress || 0) - (a.overallProgress || 0);
         if (sortBy === "name_asc") return (a.studentName || "").localeCompare(b.studentName || "");
         if (sortBy === "date_desc") return parseTimestamp(b.registeredAt) - parseTimestamp(a.registeredAt);
@@ -2409,48 +2419,90 @@
       if (!tbody) return;
 
       if (students.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; color: #94A3B8; padding: 2.5rem;">No students found matching current filters.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94A3B8; padding: 2.5rem;">No students found matching current filters.</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = students.map(s => {
-        const regFormatted = s.registeredAt ? new Date(s.registeredAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "N/A";
-        const lastActiveFormatted = s.lastActive ? new Date(s.lastActive).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : regFormatted;
-        const attempts = s.totalQuizAttempts || (s.quizScore !== undefined ? 1 : 0);
-        const score = s.quizScore !== undefined ? `${s.quizScore} / 15` : "--";
-        const accuracy = s.averageAccuracy ? `${s.averageAccuracy}%` : (s.quizScore !== undefined ? `${Math.round((s.quizScore/15)*100)}%` : "--");
-        const progress = s.overallProgress || 20;
+      const topScorerEntry = getRankedLeaderboardList()[0];
+      const topScorerId = topScorerEntry ? topScorerEntry.studentId : null;
 
-        // Count badges for this student
-        const studentBadges = dbBadges.filter(b => b.studentId === s.studentId);
-        const badgeCount = studentBadges.length || (s.badge ? 1 : 0);
+      tbody.innerHTML = students.map(s => {
+        const regFormatted = s.registeredAt ? new Date(s.registeredAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "N/A";
+
+        // 2. Prompt Gym completion
+        const gymSub = dbPromptSubmissions.find(p => p.studentId === s.studentId);
+        const gymDone = !!s.promptGymCompleted || !!gymSub;
+        const gymScore = s.promptScore ?? gymSub?.score;
+
+        // 3. AI Tools completion
+        const toolsDone = !!s.aiToolsCompleted || dbEngagementMetrics.some(m => m.studentId === s.studentId && m.sectionKey === "tools");
+        const toolsCount = s.aiToolsCount || 7;
+
+        // 4. AI-Resistant Fields completion
+        const resistantDone = !!s.aiResistantCompleted || dbEngagementMetrics.some(m => m.studentId === s.studentId && m.sectionKey === "resistant");
+        const resistantCount = s.aiResistantCount || 5;
+
+        // 5. Career Profile Quiz details
+        const careerRec = dbCareerAssessments.find(c => c.studentId === s.studentId);
+        const careerDone = !!s.careerCompleted || !!careerRec;
+        const careerStream = s.stream || s.careerDetails?.stream || careerRec?.stream || "";
+        const careerSchool = s.school || s.careerDetails?.school || careerRec?.school || "";
+        const topMatchTitle = s.careerTopMatch || s.careerDetails?.topMatches?.[0]?.title || careerRec?.topMatches?.[0]?.title || "";
+        const topMatchPct = s.careerTopMatchPct || s.careerDetails?.topMatches?.[0]?.percentage || careerRec?.topMatches?.[0]?.percentage || 0;
+        const secondMatchTitle = s.careerTopMatches?.[1]?.title || s.careerDetails?.topMatches?.[1]?.title || careerRec?.topMatches?.[1]?.title || "";
+
+        // 6. Knowledge Quiz score & Top Scorer badge
+        const studentQuizzes = dbQuizAttempts.filter(q => q.studentId === s.studentId && typeof q.score === "number").sort((a, b) => (b.score || 0) - (a.score || 0));
+        const bestQuiz = studentQuizzes[0];
+        const quizScoreNum = typeof s.quizScore === "number" ? s.quizScore : bestQuiz?.score;
+        const quizDone = !!s.knowledgeQuizCompleted || typeof quizScoreNum === "number";
+        const quizPct = quizDone ? (s.quizPercentage ?? s.averageAccuracy ?? bestQuiz?.percentage ?? Math.round((quizScoreNum / 15) * 100)) : null;
+        const isTopScorer = quizDone && topScorerId && s.studentId === topScorerId;
+
+        const completedCount = [true, gymDone, toolsDone, resistantDone, careerDone, quizDone].filter(Boolean).length;
+        const progress = Math.max(s.overallProgress || 0, Math.round((completedCount / 6) * 100));
 
         return `
-          <tr>
+          <tr style="${isTopScorer ? 'background: rgba(255, 215, 0, 0.06);' : ''}">
             <td>
               <span style="font-family: var(--font-mono); font-weight: 700; color: var(--admin-cyan);">${escapeHtml(s.studentId)}</span>
+              <div style="font-size: 0.7rem; color: #64748B;">${regFormatted}</div>
             </td>
             <td>
-              <strong style="color: #FFFFFF;">${escapeHtml(s.studentName)}</strong>
-              <div style="font-size: 0.72rem; color: #64748B;">${escapeHtml(s.school || 'SSMIET Workshop')}</div>
-            </td>
-            <td><span style="color: #94A3B8;">${escapeHtml(s.email || 'Participant Pass')}</span></td>
-            <td><span style="font-size: 0.78rem; color: #94A3B8;">${regFormatted}</span></td>
-            <td><span style="font-size: 0.78rem; color: #94A3B8;">${lastActiveFormatted}</span></td>
-            <td><span style="font-family: var(--font-mono);">${attempts}</span></td>
-            <td><strong style="font-family: var(--font-mono); color: var(--admin-gold);">${score}</strong></td>
-            <td><span style="font-family: var(--font-mono); color: #34D399;">${accuracy}</span></td>
-            <td>
-              <span class="badge-pill" title="Activities Completed">
-                ${s.promptGymCompleted ? '💬' : '○'} ${s.careerCompleted ? '🎯' : '○'} ${s.quizScore !== undefined ? '🏆' : '○'}
-              </span>
+              <strong style="color: #FFFFFF; font-size: 0.92rem;">${escapeHtml(s.studentName)}</strong>
+              ${isTopScorer ? '<div><span class="badge-pill badge-gold" style="font-size: 0.66rem; padding: 0.1rem 0.45rem; margin-top: 0.2rem;">👑 TOP SCORER</span></div>' : ''}
+              ${careerSchool ? `<div style="font-size: 0.72rem; color: #94A3B8; margin-top: 0.1rem;">${escapeHtml(careerSchool)}</div>` : ''}
             </td>
             <td>
-              <span class="badge-pill badge-purple">${badgeCount} Badges</span>
+              ${gymDone
+                ? `<span class="badge-pill badge-emerald">✓ Done${gymScore !== undefined ? ` (${gymScore}/5)` : ''}</span>`
+                : `<span style="font-size: 0.76rem; color: #64748B;">⏳ Pending</span>`}
+            </td>
+            <td>
+              ${toolsDone
+                ? `<span class="badge-pill badge-emerald">✓ Done (${toolsCount} tools)</span>`
+                : `<span style="font-size: 0.76rem; color: #64748B;">⏳ Pending</span>`}
+            </td>
+            <td>
+              ${resistantDone
+                ? `<span class="badge-pill badge-emerald">✓ Done (${resistantCount}+ fields)</span>`
+                : `<span style="font-size: 0.76rem; color: #64748B;">⏳ Pending</span>`}
+            </td>
+            <td style="max-width: 240px;">
+              ${careerDone ? `
+                <div style="font-size: 0.78rem; color: #F8FAFC; font-weight: 700;">👑 ${escapeHtml(topMatchTitle || 'Completed')} ${topMatchPct ? `<span style="color: var(--admin-cyan);">(${topMatchPct}%)</span>` : ''}</div>
+                <div style="font-size: 0.72rem; color: #94A3B8;">${careerStream ? `Stream: ${escapeHtml(careerStream)}` : ''}${secondMatchTitle ? ` · #2 ${escapeHtml(secondMatchTitle)}` : ''}</div>
+              ` : `<span style="font-size: 0.76rem; color: #64748B;">⏳ Pending</span>`}
+            </td>
+            <td>
+              ${quizDone ? `
+                <strong style="font-family: var(--font-mono); color: var(--admin-gold); font-size: 0.9rem;">${quizScoreNum} / 15</strong>
+                <div style="font-size: 0.72rem; color: #34D399; font-family: var(--font-mono);">${quizPct}%${s.timeFormatted || bestQuiz?.timeFormatted ? ` · ${escapeHtml(s.timeFormatted || bestQuiz?.timeFormatted)}` : ''}</div>
+              ` : `<span style="font-size: 0.76rem; color: #64748B;">⏳ Pending</span>`}
             </td>
             <td>
               <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width: ${progress}%;"></div></div>
-              <span style="font-family: var(--font-mono); font-size: 0.74rem;">${progress}%</span>
+              <span style="font-family: var(--font-mono); font-size: 0.74rem;">${progress}% (${completedCount}/6)</span>
             </td>
             <td style="text-align: right;">
               <button class="btn btn-outline btn-sm" onclick="openStudentDossier('${escapeHtml(s.studentId)}')">
@@ -2899,37 +2951,37 @@
           key: "tools",
           icon: "🛠️",
           name: "3. AI Tools Explorer",
-          count: dbStudents.filter(s => (s.overallProgress && s.overallProgress >= 50)).length || dbEngagementMetrics.filter(m => m.sectionKey === "tools").length,
-          pct: totalStudents ? Math.round(((dbStudents.filter(s => (s.overallProgress && s.overallProgress >= 50)).length || dbEngagementMetrics.filter(m => m.sectionKey === "tools").length) / totalStudents) * 100) : 0,
+          count: dbStudents.filter(s => s.aiToolsCompleted).length,
+          pct: totalStudents ? Math.round((dbStudents.filter(s => s.aiToolsCompleted).length / totalStudents) * 100) : 0,
           color: "#F59E0B",
-          sub: "7 Tools Matrix explored"
+          sub: "AI Tools Explorer completed"
         },
         {
           key: "resistant",
           icon: "🛡️",
           name: "4. AI-Resistant Fields",
-          count: dbStudents.filter(s => (s.overallProgress && s.overallProgress >= 67)).length || dbEngagementMetrics.filter(m => m.sectionKey === "resistant").length,
-          pct: totalStudents ? Math.round(((dbStudents.filter(s => (s.overallProgress && s.overallProgress >= 67)).length || dbEngagementMetrics.filter(m => m.sectionKey === "resistant").length) / totalStudents) * 100) : 0,
+          count: dbStudents.filter(s => s.aiResistantCompleted).length,
+          pct: totalStudents ? Math.round((dbStudents.filter(s => s.aiResistantCompleted).length / totalStudents) * 100) : 0,
           color: "#8B5CF6",
-          sub: "21 Career domains vetted"
+          sub: "AI-Resistant Fields completed"
         },
         {
           key: "career",
           icon: "🎯",
           name: "5. Career Profile Quiz",
-          count: dbStudents.filter(s => s.careerCompleted || (s.overallProgress && s.overallProgress >= 84)).length || dbCareerAssessments.length,
-          pct: totalStudents ? Math.round(((dbStudents.filter(s => s.careerCompleted || (s.overallProgress && s.overallProgress >= 84)).length || dbCareerAssessments.length) / totalStudents) * 100) : 0,
+          count: dbStudents.filter(s => s.careerCompleted).length || dbCareerAssessments.length,
+          pct: totalStudents ? Math.round(((dbStudents.filter(s => s.careerCompleted).length || dbCareerAssessments.length) / totalStudents) * 100) : 0,
           color: "#EC4899",
-          sub: "Dossiers generated"
+          sub: "Career dossiers submitted"
         },
         {
           key: "knowledge",
           icon: "🧠",
           name: "6. Knowledge Quiz",
-          count: dbStudents.filter(s => s.quizScore !== undefined || (s.overallProgress && s.overallProgress === 100)).length || dbQuizAttempts.length,
-          pct: totalStudents ? Math.round(((dbStudents.filter(s => s.quizScore !== undefined || (s.overallProgress && s.overallProgress === 100)).length || dbQuizAttempts.length) / totalStudents) * 100) : 0,
+          count: dbStudents.filter(s => s.knowledgeQuizCompleted || typeof s.quizScore === "number").length,
+          pct: totalStudents ? Math.round((dbStudents.filter(s => s.knowledgeQuizCompleted || typeof s.quizScore === "number").length / totalStudents) * 100) : 0,
           color: "#35D9FF",
-          sub: "15/15 Final mastery"
+          sub: "Knowledge Quiz scored"
         }
       ];
 
@@ -3010,22 +3062,22 @@
             key: "tools",
             title: "Section 3: AI Tools Explorer",
             icon: "🛠️",
-            events: dbEngagementMetrics.filter(m => m.sectionKey === "tools").length || Math.round(dbStudents.length * 0.8),
-            uniqueStudents: dbStudents.filter(s => s.overallProgress >= 50).length,
+            events: dbEngagementMetrics.filter(m => m.sectionKey === "tools").length,
+            uniqueStudents: dbStudents.filter(s => s.aiToolsCompleted).length,
             status: "Interactive Matrix",
-            metricLabel: "Catalog Coverage",
-            metricVal: "7/7 Tools Unlocked",
+            metricLabel: "Completed Students",
+            metricVal: `${dbStudents.filter(s => s.aiToolsCompleted).length} / ${dbStudents.length}`,
             color: "#F59E0B"
           },
           {
             key: "resistant",
             title: "Section 4: AI-Resistant Fields",
             icon: "🛡️",
-            events: dbEngagementMetrics.filter(m => m.sectionKey === "resistant").length || Math.round(dbStudents.length * 0.7),
-            uniqueStudents: dbStudents.filter(s => s.overallProgress >= 67).length,
+            events: dbEngagementMetrics.filter(m => m.sectionKey === "resistant").length,
+            uniqueStudents: dbStudents.filter(s => s.aiResistantCompleted).length,
             status: "Career Roadmaps",
-            metricLabel: "Domains Explored",
-            metricVal: "21 Career Pathways",
+            metricLabel: "Completed Students",
+            metricVal: `${dbStudents.filter(s => s.aiResistantCompleted).length} / ${dbStudents.length}`,
             color: "#8B5CF6"
           },
           {
@@ -3187,22 +3239,50 @@
       const student = dbStudents.find(s => s.studentId === studentId) || { studentId, studentName: "Explorer" };
       const attempts = dbQuizAttempts.filter(q => q.studentId === studentId);
       const prompts = dbPromptSubmissions.filter(p => p.studentId === studentId);
-      const career = dbCareerAssessments.find(c => c.studentId === studentId);
+      const career = dbCareerAssessments.find(c => c.studentId === studentId) || student.careerDetails;
       const badges = dbBadges.filter(b => b.studentId === studentId);
 
-      document.getElementById("dossierModalTitle").innerText = `${student.studentName} — Learning History Dossier`;
-      document.getElementById("dossierModalSub").innerText = `Explorer ID: ${student.studentId} · Registered: ${student.registeredAt ? new Date(student.registeredAt).toLocaleDateString() : 'Active'}`;
+      const gymDone = !!student.promptGymCompleted || prompts.length > 0;
+      const toolsDone = !!student.aiToolsCompleted || dbEngagementMetrics.some(m => m.studentId === studentId && m.sectionKey === "tools");
+      const resistantDone = !!student.aiResistantCompleted || dbEngagementMetrics.some(m => m.studentId === studentId && m.sectionKey === "resistant");
+      const careerDone = !!student.careerCompleted || !!career;
+      const quizDone = !!student.knowledgeQuizCompleted || typeof student.quizScore === "number" || attempts.length > 0;
+      const topLeader = getRankedLeaderboardList()[0];
+      const isTopScorer = quizDone && topLeader && topLeader.studentId === studentId;
+
+      document.getElementById("dossierModalTitle").innerText = `${student.studentName}${isTopScorer ? ' 👑 (Top Scorer)' : ''} — Complete Student Record`;
+      document.getElementById("dossierModalSub").innerText = `Explorer ID: ${student.studentId} · Registered: ${student.registeredAt ? new Date(student.registeredAt).toLocaleString() : 'Active'}`;
 
       const body = document.getElementById("dossierModalBody");
       body.innerHTML = `
-        <!-- Profile Overview Card -->
-        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.15rem; margin-bottom: 1.25rem;">
-          <h4 style="margin: 0 0 0.75rem; color: #FFFFFF; font-size: 0.95rem;">👤 Participant Overview</h4>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.85rem; font-size: 0.82rem;">
-            <div><span style="color:#94A3B8;">School:</span> <strong style="color:#E2E8F0;">${escapeHtml(student.school || career?.school || '12th Grade')}</strong></div>
-            <div><span style="color:#94A3B8;">Stream:</span> <strong style="color:#E2E8F0;">${escapeHtml(student.stream || career?.stream || 'PCM')}</strong></div>
-            <div><span style="color:#94A3B8;">Overall Progress:</span> <strong style="color:var(--admin-cyan);">${student.overallProgress || 50}%</strong></div>
-            <div><span style="color:#94A3B8;">Best Score:</span> <strong style="color:var(--admin-gold);">${student.quizScore !== undefined ? `${student.quizScore}/15` : (attempts[0]?.score ? `${attempts[0].score}/15` : '--')}</strong></div>
+        <!-- 6-Stage Workshop Completion Checklist -->
+        <div style="background: rgba(30, 41, 59, 0.75); border: 1px solid rgba(53, 217, 255, 0.25); border-radius: 12px; padding: 1.15rem; margin-bottom: 1.25rem;">
+          <h4 style="margin: 0 0 0.75rem; color: #FFFFFF; font-size: 0.95rem;">✅ Workshop Completion Checklist</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.65rem; font-size: 0.82rem;">
+            <div style="background: rgba(0,0,0,0.25); padding: 0.6rem 0.75rem; border-radius: 8px;">
+              <div style="color:#94A3B8; font-size:0.74rem;">1. Registered Name (Vanakkam Card)</div>
+              <strong style="color:#FFFFFF;">${escapeHtml(student.studentName)}</strong>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); padding: 0.6rem 0.75rem; border-radius: 8px;">
+              <div style="color:#94A3B8; font-size:0.74rem;">2. Prompt Gym Completion</div>
+              <strong style="color:${gymDone ? '#34D399' : '#94A3B8'};">${gymDone ? `✓ Completed (${student.promptScore ?? prompts[0]?.score ?? 5}/5)` : '⏳ Pending'}</strong>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); padding: 0.6rem 0.75rem; border-radius: 8px;">
+              <div style="color:#94A3B8; font-size:0.74rem;">3. AI Tools Completion</div>
+              <strong style="color:${toolsDone ? '#34D399' : '#94A3B8'};">${toolsDone ? `✓ Completed (${student.aiToolsCount || 7} tools)` : '⏳ Pending'}</strong>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); padding: 0.6rem 0.75rem; border-radius: 8px;">
+              <div style="color:#94A3B8; font-size:0.74rem;">4. AI-Resistant Fields Completion</div>
+              <strong style="color:${resistantDone ? '#34D399' : '#94A3B8'};">${resistantDone ? `✓ Completed (${student.aiResistantCount || 5}+ fields)` : '⏳ Pending'}</strong>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); padding: 0.6rem 0.75rem; border-radius: 8px;">
+              <div style="color:#94A3B8; font-size:0.74rem;">5. Career Profile Quiz</div>
+              <strong style="color:${careerDone ? '#34D399' : '#94A3B8'};">${careerDone ? `✓ Completed (${escapeHtml(student.careerTopMatch || career?.topMatches?.[0]?.title || 'Mapped')})` : '⏳ Pending'}</strong>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); padding: 0.6rem 0.75rem; border-radius: 8px;">
+              <div style="color:#94A3B8; font-size:0.74rem;">6. Knowledge Quiz Score</div>
+              <strong style="color:${quizDone ? 'var(--admin-gold)' : '#94A3B8'};">${quizDone ? `${student.quizScore ?? attempts[0]?.score ?? 0} / 15 (${student.quizPercentage ?? attempts[0]?.percentage ?? 0}%)${isTopScorer ? ' 👑 TOP SCORER' : ''}` : '⏳ Pending'}</strong>
+            </div>
           </div>
         </div>
 
@@ -3220,7 +3300,7 @@
           ${attempts.length ? attempts.map((a, i) => `
             <div style="padding: 0.65rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.82rem;">
               <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-                <strong>Attempt #${i+1} · ${a.createdAt ? new Date(a.createdAt).toLocaleDateString() : 'Recorded'}</strong>
+                <strong>Attempt #${i+1} · ${a.createdAt ? new Date(a.createdAt).toLocaleString() : 'Recorded'}</strong>
                 <span class="badge-pill badge-gold">${a.score}/15 (${a.percentage}%)</span>
               </div>
               <div style="color: #94A3B8; font-size: 0.78rem;">Time: ${a.timeFormatted || 'N/A'} · Language: ${a.quizLanguage === 'ta' ? 'தமிழ்' : 'English'} · Badge: ${a.badge || 'AI Explorer'}</div>
@@ -3230,15 +3310,26 @@
 
         <!-- Career Profile Assessment Dossier -->
         <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.15rem; margin-bottom: 1.25rem;">
-          <h4 style="margin: 0 0 0.75rem; color: #FFFFFF; font-size: 0.95rem;">🧭 Career Profile Recommendations</h4>
+          <h4 style="margin: 0 0 0.75rem; color: #FFFFFF; font-size: 0.95rem;">🧭 Career Profile Quiz Details</h4>
           ${career ? `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.65rem; font-size: 0.8rem; margin-bottom: 0.9rem; background: rgba(0,0,0,0.22); padding: 0.75rem; border-radius: 8px;">
+              <div><span style="color:#94A3B8;">School:</span> <strong style="color:#E2E8F0;">${escapeHtml(career.school || student.school || 'N/A')}</strong></div>
+              <div><span style="color:#94A3B8;">District:</span> <strong style="color:#E2E8F0;">${escapeHtml(career.district || student.district || 'N/A')}</strong></div>
+              <div><span style="color:#94A3B8;">Stream:</span> <strong style="color:#E2E8F0;">${escapeHtml(career.stream || student.stream || 'N/A')}</strong></div>
+              <div><span style="color:#94A3B8;">Math Comfort:</span> <strong style="color:#E2E8F0;">${career.mathComfort ?? 3}/5</strong></div>
+              <div><span style="color:#94A3B8;">Coding Comfort:</span> <strong style="color:#E2E8F0;">${career.codingComfort ?? 1}/5</strong></div>
+              <div><span style="color:#94A3B8;">After 12th Plan:</span> <strong style="color:#E2E8F0;">${escapeHtml(career.planAfter12th || 'N/A')}</strong></div>
+              ${Array.isArray(career.favSubjects) && career.favSubjects.length ? `<div style="grid-column: 1 / -1;"><span style="color:#94A3B8;">Favorite Subjects:</span> <strong style="color:#E2E8F0;">${escapeHtml(career.favSubjects.join(', '))}</strong></div>` : ''}
+              ${Array.isArray(career.hobbies) && career.hobbies.length ? `<div style="grid-column: 1 / -1;"><span style="color:#94A3B8;">Hobbies / Interests:</span> <strong style="color:#E2E8F0;">${escapeHtml(career.hobbies.join(', '))}</strong></div>` : ''}
+              ${Array.isArray(career.careerPriorities) && career.careerPriorities.length ? `<div style="grid-column: 1 / -1;"><span style="color:#94A3B8;">Priorities:</span> <strong style="color:#E2E8F0;">${escapeHtml(career.careerPriorities.join(', '))}</strong></div>` : ''}
+            </div>
             <div style="font-size: 0.82rem; margin-bottom: 0.75rem;">
               <strong>Top 3 AI-Resistant Career Matches:</strong>
               <div style="margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.4rem;">
                 ${(career.topMatches || []).map((m, idx) => `
                   <div style="background: rgba(0,0,0,0.3); padding: 0.5rem 0.75rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
                     <span>#${idx+1} · ${escapeHtml(m.title)}</span>
-                    <span class="badge-pill badge-cyan">${m.percentage}% Compatibility</span>
+                    <span class="badge-pill badge-cyan">${m.percentage || m.matchPct || 0}% Compatibility</span>
                   </div>
                 `).join('')}
               </div>
@@ -3279,10 +3370,55 @@
         showToast("No student records to export.", "⚠️");
         return;
       }
-      const headers = ["Student ID", "Student Name", "Email", "Registered At", "Last Active", "School", "Stream", "Quiz Score", "Total Attempts", "Average Accuracy", "Progress %", "Career Match"];
-      const rows = dbStudents.map(s => [
-        s.studentId, s.studentName, s.email || "", s.registeredAt || "", s.lastActive || "", s.school || "", s.stream || "", s.quizScore !== undefined ? s.quizScore : "", s.totalQuizAttempts || 0, s.averageAccuracy || "", s.overallProgress || 0, s.careerTopMatch || ""
-      ]);
+      const topScorerEntry = getRankedLeaderboardList()[0];
+      const topScorerId = topScorerEntry ? topScorerEntry.studentId : null;
+
+      const headers = [
+        "Explorer ID",
+        "Registered Name",
+        "Registered At",
+        "Prompt Gym Completed",
+        "Prompt Gym Score",
+        "AI Tools Completed",
+        "AI-Resistant Fields Completed",
+        "Career Profile Completed",
+        "School",
+        "Stream",
+        "Career Top Match #1",
+        "Career Top Match #2",
+        "Career 10-Year Goal",
+        "Knowledge Quiz Completed",
+        "Knowledge Quiz Score",
+        "Knowledge Quiz %",
+        "Quiz Time",
+        "Top Scorer",
+        "Overall Progress %"
+      ];
+      const rows = dbStudents.map(s => {
+        const careerRec = dbCareerAssessments.find(c => c.studentId === s.studentId) || s.careerDetails;
+        const quizDone = !!s.knowledgeQuizCompleted || typeof s.quizScore === "number";
+        return [
+          s.studentId,
+          s.studentName,
+          s.registeredAt || "",
+          s.promptGymCompleted ? "Yes" : "No",
+          s.promptScore !== undefined ? `${s.promptScore}/5` : "",
+          s.aiToolsCompleted ? "Yes" : "No",
+          s.aiResistantCompleted ? "Yes" : "No",
+          s.careerCompleted || careerRec ? "Yes" : "No",
+          s.school || careerRec?.school || "",
+          s.stream || careerRec?.stream || "",
+          s.careerTopMatch || careerRec?.topMatches?.[0]?.title || "",
+          s.careerTopMatches?.[1]?.title || careerRec?.topMatches?.[1]?.title || "",
+          careerRec?.tenYearGoal || "",
+          quizDone ? "Yes" : "No",
+          quizDone && s.quizScore !== undefined ? `${s.quizScore}/15` : "",
+          quizDone && (s.quizPercentage ?? s.averageAccuracy) !== undefined ? `${s.quizPercentage ?? s.averageAccuracy}%` : "",
+          s.timeFormatted || "",
+          (topScorerId && s.studentId === topScorerId) ? "TOP SCORER" : "",
+          s.overallProgress || 0
+        ];
+      });
       triggerCsvDownload("all_registered_students", headers, rows);
     }
 

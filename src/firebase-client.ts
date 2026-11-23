@@ -108,6 +108,27 @@ export async function testConnection(): Promise<{ success: boolean; message: str
   }
 }
 
+// Compute clean 6-stage workshop completion percentage (never drops backwards)
+function computeOverallProgress(data: Record<string, any>): number {
+  let completed = 0;
+  if (data.guideCompleted !== false) completed++; // Registered via Explorer Card
+  if (data.promptGymCompleted) completed++;
+  if (data.aiToolsCompleted) completed++;
+  if (data.aiResistantCompleted) completed++;
+  if (data.careerCompleted) completed++;
+  if (data.knowledgeQuizCompleted || typeof data.quizScore === "number") completed++;
+  return Math.min(100, Math.round((completed / 6) * 100));
+}
+
+async function getExistingStudentData(studentId: string): Promise<Record<string, any>> {
+  try {
+    const snap = await getDoc(doc(db, "students", studentId));
+    return snap.exists() ? (snap.data() as Record<string, any>) : {};
+  } catch {
+    return {};
+  }
+}
+
 // Student-side submission helpers
 export async function saveStudentRecord(student: {
   studentId: string;
@@ -121,14 +142,32 @@ export async function saveStudentRecord(student: {
   overallProgress?: number;
   [key: string]: any;
 }) {
-  const sid = student.studentId;
+  const sid = (student.studentId || "").trim();
+  const sname = (student.studentName || "").trim();
+  if (!sid || !sname || sid === "EXP-0000" || sid === "ANON-0000") return;
+
   const docRef = doc(db, "students", sid);
+  const existing = await getExistingStudentData(sid);
   const nowIso = new Date().toISOString();
+
+  const mergedState = {
+    ...existing,
+    ...student,
+    studentId: sid,
+    studentName: sname,
+    guideCompleted: true,
+    registeredAt: existing.registeredAt || student.registeredAt || nowIso
+  };
 
   await setDoc(
     docRef,
     {
       ...student,
+      studentId: sid,
+      studentName: sname,
+      guideCompleted: true,
+      registeredAt: existing.registeredAt || student.registeredAt || nowIso,
+      overallProgress: Math.max(existing.overallProgress || 0, computeOverallProgress(mergedState)),
       lastActive: nowIso,
       updatedAt: serverTimestamp()
     },
@@ -150,12 +189,16 @@ export async function saveQuizSubmission(quizData: {
   school?: string;
   answersSummary?: any[];
 }) {
+  const sid = (quizData.studentId || "").trim();
+  if (!sid || sid === "EXP-0000" || sid === "ANON-0000") return;
+
   const nowIso = new Date().toISOString();
   const attemptId = `quiz_${Date.now()}_${Math.floor(Math.random() * 900 + 100)}`;
 
   // 1. Add to quizAttempts collection
   await addDoc(collection(db, "quizAttempts"), {
     ...quizData,
+    studentId: sid,
     attemptId,
     createdAt: nowIso,
     timestamp: serverTimestamp()
@@ -165,8 +208,8 @@ export async function saveQuizSubmission(quizData: {
   const isChampion = quizData.score >= 12;
   const badgeTitle = isChampion ? "AI Champion 🏆" : (quizData.score >= 8 ? "AI Explorer 🚀" : "AI Explorer");
   await addDoc(collection(db, "studentBadges"), {
-    badgeId: `badge_quiz_${quizData.studentId}_${Date.now()}`,
-    studentId: quizData.studentId,
+    badgeId: `badge_quiz_${sid}_${Date.now()}`,
+    studentId: sid,
     studentName: quizData.studentName,
     badgeName: badgeTitle,
     category: "Knowledge Quiz",
@@ -175,22 +218,37 @@ export async function saveQuizSubmission(quizData: {
     timestamp: serverTimestamp()
   });
 
-  // 3. Update student record
-  const studentRef = doc(db, "students", quizData.studentId);
+  // 3. Update student record (preserve best score & merge completion state)
+  const existing = await getExistingStudentData(sid);
+  const prevBest = typeof existing.highestScore === "number" ? existing.highestScore : (typeof existing.quizScore === "number" ? existing.quizScore : -1);
+  const isNewBest = quizData.score >= prevBest;
+  const bestScore = isNewBest ? quizData.score : prevBest;
+  const bestPct = isNewBest ? quizData.percentage : (existing.quizPercentage || quizData.percentage);
+  const bestTimeSec = isNewBest ? quizData.timeSeconds : (existing.timeSeconds ?? quizData.timeSeconds);
+  const bestTimeFmt = isNewBest ? quizData.timeFormatted : (existing.timeFormatted || quizData.timeFormatted);
+
+  const mergedState = { ...existing, guideCompleted: true, knowledgeQuizCompleted: true, quizScore: bestScore };
+  const studentRef = doc(db, "students", sid);
   await setDoc(
     studentRef,
     {
-      studentId: quizData.studentId,
+      studentId: sid,
       studentName: quizData.studentName,
-      quizScore: quizData.score,
-      highestScore: quizData.score,
-      totalScore: quizData.score + 5,
-      averageAccuracy: quizData.percentage,
-      timeSeconds: quizData.timeSeconds,
+      guideCompleted: true,
+      knowledgeQuizCompleted: true,
+      quizScore: bestScore,
+      quizTotal: quizData.totalQuestions || 15,
+      quizPercentage: bestPct,
+      highestScore: bestScore,
+      totalScore: bestScore + (typeof existing.promptScore === "number" ? existing.promptScore : 0),
+      averageAccuracy: bestPct,
+      timeSeconds: bestTimeSec,
+      timeFormatted: bestTimeFmt,
       badge: badgeTitle,
       status: "Completed Knowledge Quiz 🏆",
-      overallProgress: 100,
+      overallProgress: Math.max(existing.overallProgress || 0, computeOverallProgress(mergedState)),
       totalQuizAttempts: increment(1),
+      quizCompletedAt: nowIso,
       lastActive: nowIso,
       updatedAt: serverTimestamp()
     },
@@ -205,12 +263,16 @@ export async function savePromptGymSubmission(gymData: {
   score: number;
   school?: string;
 }) {
+  const sid = (gymData.studentId || "").trim();
+  if (!sid || sid === "EXP-0000" || sid === "ANON-0000") return;
+
   const nowIso = new Date().toISOString();
   const submissionId = `gym_${Date.now()}_${Math.floor(Math.random() * 900 + 100)}`;
 
   // 1. Add to promptSubmissions
   await addDoc(collection(db, "promptSubmissions"), {
     ...gymData,
+    studentId: sid,
     submissionId,
     maxScore: 5,
     submittedAt: nowIso,
@@ -219,8 +281,8 @@ export async function savePromptGymSubmission(gymData: {
 
   // 2. Add badge
   await addDoc(collection(db, "studentBadges"), {
-    badgeId: `badge_gym_${gymData.studentId}`,
-    studentId: gymData.studentId,
+    badgeId: `badge_gym_${sid}`,
+    studentId: sid,
     studentName: gymData.studentName,
     badgeName: "Prompt Master 💡",
     category: "Prompt Gym",
@@ -230,15 +292,86 @@ export async function savePromptGymSubmission(gymData: {
   });
 
   // 3. Update student
-  const studentRef = doc(db, "students", gymData.studentId);
+  const existing = await getExistingStudentData(sid);
+  const mergedState = { ...existing, guideCompleted: true, promptGymCompleted: true };
+  const studentRef = doc(db, "students", sid);
   await setDoc(
     studentRef,
     {
-      studentId: gymData.studentId,
+      studentId: sid,
       studentName: gymData.studentName,
+      guideCompleted: true,
       promptGymCompleted: true,
-      promptScore: gymData.score,
-      overallProgress: 34,
+      promptScore: Math.max(existing.promptScore || 0, gymData.score),
+      promptCompletedAt: existing.promptCompletedAt || nowIso,
+      status: existing.knowledgeQuizCompleted ? existing.status : "Completed Prompt Gym 💬",
+      overallProgress: Math.max(existing.overallProgress || 0, computeOverallProgress(mergedState)),
+      lastActive: nowIso,
+      updatedAt: serverTimestamp()
+    },
+    { merge: true }
+  );
+}
+
+export async function saveToolsCompletion(toolsData: {
+  studentId: string;
+  studentName: string;
+  toolsCount?: number;
+}) {
+  const sid = (toolsData.studentId || "").trim();
+  if (!sid || sid === "EXP-0000" || sid === "ANON-0000") return;
+
+  const nowIso = new Date().toISOString();
+  const existing = await getExistingStudentData(sid);
+  const mergedState = { ...existing, guideCompleted: true, aiToolsCompleted: true };
+  const studentRef = doc(db, "students", sid);
+
+  await setDoc(
+    studentRef,
+    {
+      studentId: sid,
+      studentName: toolsData.studentName || existing.studentName || "Explorer",
+      guideCompleted: true,
+      aiToolsCompleted: true,
+      aiToolsCount: toolsData.toolsCount || 7,
+      aiToolsCompletedAt: existing.aiToolsCompletedAt || nowIso,
+      status: existing.knowledgeQuizCompleted ? existing.status : "Completed AI Tools 🛠️",
+      overallProgress: Math.max(existing.overallProgress || 0, computeOverallProgress(mergedState)),
+      lastActive: nowIso,
+      updatedAt: serverTimestamp()
+    },
+    { merge: true }
+  );
+}
+
+export async function saveResistantFieldsCompletion(resistantData: {
+  studentId: string;
+  studentName: string;
+  fieldsCount?: number;
+  exploredFields?: string[];
+}) {
+  const sid = (resistantData.studentId || "").trim();
+  if (!sid || sid === "EXP-0000" || sid === "ANON-0000") return;
+
+  const nowIso = new Date().toISOString();
+  const existing = await getExistingStudentData(sid);
+  const mergedState = { ...existing, guideCompleted: true, aiResistantCompleted: true };
+  const studentRef = doc(db, "students", sid);
+
+  await setDoc(
+    studentRef,
+    {
+      studentId: sid,
+      studentName: resistantData.studentName || existing.studentName || "Explorer",
+      guideCompleted: true,
+      aiResistantCompleted: true,
+      aiResistantCount: Math.max(existing.aiResistantCount || 0, resistantData.fieldsCount || 5),
+      aiResistantExploredFields: Array.isArray(resistantData.exploredFields)
+        ? resistantData.exploredFields.slice(0, 25)
+        : (existing.aiResistantExploredFields || []),
+      aiResistantCompletedAt: existing.aiResistantCompletedAt || nowIso,
+      status: existing.knowledgeQuizCompleted ? existing.status : "Completed AI-Resistant Fields 🛡️",
+      overallProgress: Math.max(existing.overallProgress || 0, computeOverallProgress(mergedState)),
       lastActive: nowIso,
       updatedAt: serverTimestamp()
     },
@@ -265,12 +398,16 @@ export async function saveCareerAssessment(careerData: {
   topMatches?: any[];
   profileAnalysis?: any;
 }) {
+  const sid = (careerData.studentId || "").trim();
+  if (!sid || sid === "EXP-0000" || sid === "ANON-0000") return;
+
   const nowIso = new Date().toISOString();
   const assessmentId = `career_${Date.now()}_${Math.floor(Math.random() * 900 + 100)}`;
 
   // 1. Add to careerAssessments
   await addDoc(collection(db, "careerAssessments"), {
     ...careerData,
+    studentId: sid,
     assessmentId,
     createdAt: nowIso,
     timestamp: serverTimestamp()
@@ -278,8 +415,8 @@ export async function saveCareerAssessment(careerData: {
 
   // 2. Add badge
   await addDoc(collection(db, "studentBadges"), {
-    badgeId: `badge_career_${careerData.studentId}`,
-    studentId: careerData.studentId,
+    badgeId: `badge_career_${sid}`,
+    studentId: sid,
     studentName: careerData.studentName,
     badgeName: "Career Pioneer 🧭",
     category: "Career Profile",
@@ -288,19 +425,50 @@ export async function saveCareerAssessment(careerData: {
     timestamp: serverTimestamp()
   });
 
-  // 3. Update student
-  const studentRef = doc(db, "students", careerData.studentId);
-  const topMatch = careerData.topMatches?.[0]?.title || "";
-  const topMatchPct = careerData.topMatches?.[0]?.percentage || 0;
+  // 3. Update student with full career profile quiz summary
+  const existing = await getExistingStudentData(sid);
+  const mergedState = { ...existing, guideCompleted: true, careerCompleted: true };
+  const studentRef = doc(db, "students", sid);
+  const topMatchesSummary = (careerData.topMatches || []).slice(0, 3).map((m: any) => ({
+    title: m.title || "",
+    percentage: m.percentage || m.matchPct || 0
+  }));
+  const topMatch = topMatchesSummary[0]?.title || "";
+  const topMatchPct = topMatchesSummary[0]?.percentage || 0;
+
   await setDoc(
     studentRef,
     {
-      studentId: careerData.studentId,
+      studentId: sid,
       studentName: careerData.studentName,
+      guideCompleted: true,
+      school: careerData.school || existing.school || "",
+      district: careerData.district || existing.district || "",
+      classGrade: careerData.classGrade || existing.classGrade || "12th",
+      stream: careerData.stream || existing.stream || "",
       careerCompleted: true,
       careerTopMatch: topMatch,
       careerTopMatchPct: topMatchPct,
-      overallProgress: 67,
+      careerTopMatches: topMatchesSummary,
+      careerDetails: {
+        school: careerData.school || "",
+        district: careerData.district || "",
+        classGrade: careerData.classGrade || "12th",
+        stream: careerData.stream || "",
+        favSubjects: careerData.favSubjects || [],
+        mathComfort: careerData.mathComfort ?? 3,
+        codingComfort: careerData.codingComfort ?? 1,
+        hobbies: careerData.hobbies || [],
+        careerPriorities: careerData.careerPriorities || [],
+        workStyle: careerData.workStyle || "",
+        environmentPref: careerData.environmentPref || "",
+        planAfter12th: careerData.planAfter12th || "",
+        tenYearGoal: careerData.tenYearGoal || "",
+        topMatches: topMatchesSummary
+      },
+      careerCompletedAt: nowIso,
+      status: existing.knowledgeQuizCompleted ? existing.status : "Completed Career Profile 🎯",
+      overallProgress: Math.max(existing.overallProgress || 0, computeOverallProgress(mergedState)),
       lastActive: nowIso,
       updatedAt: serverTimestamp()
     },
@@ -341,9 +509,10 @@ export async function logEngagementMetric(metric: EngagementMetricPayload): Prom
       timestamp: serverTimestamp()
     });
 
-    // 2. Update student's active engagement tracking in 'students' collection
-    if (metric.studentId) {
-      const studentRef = doc(db, "students", metric.studentId);
+    // 2. Update student's active engagement tracking in 'students' collection (only for valid registered students)
+    const sid = (metric.studentId || "").trim();
+    if (sid && sid !== "EXP-0000" && sid !== "ANON-0000") {
+      const studentRef = doc(db, "students", sid);
       const studentUpdate: Record<string, any> = {
         lastActive: nowIso,
         lastSection: metric.section,
@@ -351,9 +520,6 @@ export async function logEngagementMetric(metric: EngagementMetricPayload): Prom
         lastAction: metric.action,
         updatedAt: serverTimestamp()
       };
-      if (typeof metric.overallProgress === "number") {
-        studentUpdate.overallProgress = metric.overallProgress;
-      }
       if (typeof metric.performanceScore === "number") {
         studentUpdate[`${metric.sectionKey}Score`] = metric.performanceScore;
       }
@@ -664,6 +830,8 @@ if (typeof window !== "undefined") {
     saveStudentRecord,
     saveQuizSubmission,
     savePromptGymSubmission,
+    saveToolsCompletion,
+    saveResistantFieldsCompletion,
     saveCareerAssessment,
     logEngagementMetric,
     listenToWorkshopData,

@@ -249,29 +249,71 @@ async function startServer() {
     db.submissions.unshift(fullRecord);
 
     // Update student's corresponding record
-    const student = db.students.find(s => s.studentId === record.studentId);
+    const student: any = db.students.find(s => s.studentId === record.studentId);
     if (student) {
       student.lastActive = new Date().toISOString();
+      student.guideCompleted = true;
+      if (record.studentName) student.studentName = record.studentName;
       if (record.school) student.school = record.school;
       if (record.district) student.district = record.district;
       if (record.classGrade) student.classGrade = record.classGrade;
       if (record.stream) student.stream = record.stream;
 
-      if (record.type === 'knowledge_quiz') {
-        student.quizScore = record.score;
-        student.quizTotal = record.totalQuestions || 15;
-        student.quizPercentage = record.percentage;
-        student.timeSeconds = record.timeSeconds;
-        student.badge = record.badge;
-        student.totalScore = (student.promptScore || 5) + (record.score || 0);
-        student.status = 'Completed Knowledge Quiz';
+      if (record.type === 'prompt_gym') {
+        student.promptGymCompleted = true;
+        student.promptScore = Math.max(student.promptScore || 0, record.promptScore || 5);
+        student.status = student.knowledgeQuizCompleted ? student.status : 'Completed Prompt Gym 💬';
+      } else if (record.type === 'tools_completed') {
+        student.aiToolsCompleted = true;
+        student.aiToolsCount = record.toolsCount || 7;
+        student.status = student.knowledgeQuizCompleted ? student.status : 'Completed AI Tools 🛠️';
+      } else if (record.type === 'resistant_completed') {
+        student.aiResistantCompleted = true;
+        student.aiResistantCount = record.fieldsCount || 5;
+        student.status = student.knowledgeQuizCompleted ? student.status : 'Completed AI-Resistant Fields 🛡️';
       } else if (record.type === 'career_profile') {
+        student.careerCompleted = true;
         if (Array.isArray(record.topMatches) && record.topMatches[0]) {
           student.careerTopMatch = record.topMatches[0].title;
           student.careerTopMatchPct = record.topMatches[0].percentage || record.topMatches[0].matchPct;
+          student.careerTopMatches = record.topMatches.slice(0, 3).map((m: any) => ({
+            title: m.title,
+            percentage: m.percentage || m.matchPct || 0
+          }));
         }
-        student.status = student.quizScore !== undefined ? 'Completed All Phases' : 'Completed Career Profile';
+        student.careerDetails = {
+          school: record.school || '',
+          district: record.district || '',
+          classGrade: record.classGrade || '12th',
+          stream: record.stream || '',
+          mathComfort: record.mathComfort ?? 3,
+          codingComfort: record.codingComfort ?? 1,
+          planAfter12th: record.planAfter12th || '',
+          tenYearGoal: record.tenYearGoal || '',
+          topMatches: student.careerTopMatches || []
+        };
+        student.status = student.knowledgeQuizCompleted ? 'Completed All Phases' : 'Completed Career Profile 🎯';
+      } else if (record.type === 'knowledge_quiz') {
+        student.knowledgeQuizCompleted = true;
+        student.quizScore = typeof student.quizScore === 'number' ? Math.max(student.quizScore, record.score || 0) : (record.score || 0);
+        student.quizTotal = record.totalQuestions || 15;
+        student.quizPercentage = record.percentage;
+        student.timeSeconds = record.timeSeconds;
+        student.timeFormatted = record.timeFormatted;
+        student.badge = record.badge;
+        student.totalScore = (student.promptScore || 0) + (student.quizScore || 0);
+        student.status = 'Completed Knowledge Quiz 🏆';
       }
+
+      const doneStages = [
+        student.guideCompleted !== false,
+        !!student.promptGymCompleted,
+        !!student.aiToolsCompleted,
+        !!student.aiResistantCompleted,
+        !!student.careerCompleted,
+        !!student.knowledgeQuizCompleted
+      ].filter(Boolean).length;
+      student.overallProgress = Math.round((doneStages / 6) * 100);
     }
 
     recalculateStats(db);
