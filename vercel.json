@@ -3,11 +3,16 @@
   "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
+  "functions": {
+    "api/**/*.ts": {
+      "includeFiles": "data/database.json"
+    }
+  },
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/admin/", "destination": "/admin.html" },
     { "source": "/admin/(.*)", "destination": "/admin.html" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/((?!admin|admin\\.html|assets|public|.*\\..*).*)", "destination": "/index.html" }
+    { "source": "/((?!api|admin|admin\\.html|assets|public|.*\\..*).*)", "destination": "/index.html" }
   ]
 }

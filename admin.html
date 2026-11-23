@@ -1899,11 +1899,18 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, password })
         });
-        const data = await res.json().catch(() => ({}));
+        const contentType = res.headers.get("content-type") || "";
+        const data = contentType.includes("application/json")
+          ? await res.json().catch(() => ({}))
+          : {};
 
         if (!res.ok || !data.success || !data.token) {
           if (alertBox) {
-            alertBox.textContent = data.error || "Invalid admin name or password.";
+            if (res.status === 404 || !contentType.includes("application/json")) {
+              alertBox.textContent = "Admin authentication API is not reachable on this host. Redeploy the latest version with the /api functions included.";
+            } else {
+              alertBox.textContent = data.error || "Invalid admin name or password.";
+            }
             alertBox.style.display = "block";
           }
           return;
