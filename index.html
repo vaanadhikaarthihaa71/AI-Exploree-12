@@ -539,22 +539,294 @@
       padding: 0.65rem 1rem !important;
     }
 
+    /* ============================================================
+       KNOWLEDGE QUIZ CLOSING ROBOT VIDEO STAGE
+       Seamlessly integrated at the very end of Knowledge Quiz
+       Preserves native aspect ratio with zero cropping or distortion
+       ============================================================ */
+    .knowledge-thankyou-section {
+      margin-top: 2.5rem;
+      padding-top: 2.25rem;
+      border-top: 1px solid var(--border-card, #e2e6ef);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .knowledge-thankyou-heading {
+      font-family: var(--font-heading);
+      font-size: clamp(1.2rem, 2.6vw, 1.45rem);
+      font-weight: 800;
+      color: var(--text-main, #1d2029);
+      margin: 0 0 0.4rem 0;
+      text-wrap: balance;
+    }
+
+    .knowledge-thankyou-sub {
+      font-size: 0.96rem;
+      line-height: 1.55;
+      color: var(--text-muted, #555d6e);
+      margin: 0 0 1.5rem 0;
+      max-width: 480px;
+    }
+
+    .knowledge-thankyou-stage {
+      position: relative;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0.25rem 0 0.5rem;
+    }
+
+    .knowledge-thankyou-halo {
+      position: absolute;
+      inset: -14px;
+      margin: auto;
+      width: min(560px, 96%);
+      height: 88%;
+      background: radial-gradient(ellipse at center, rgba(110, 68, 255, 0.2) 0%, rgba(6, 182, 212, 0.14) 48%, rgba(255, 255, 255, 0) 74%);
+      filter: blur(28px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
     .knowledge-thankyou-video-wrap {
-      width: min(230px, calc(100vw - 4rem));
-      aspect-ratio: 1 / 1;
-      margin: 0.5rem auto 1.25rem;
-      border-radius: 16px;
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: min(540px, 100%);
+      margin: 0 auto;
+      border-radius: 22px;
       overflow: hidden;
-      background: #eef4ff;
-      border: 2px solid rgba(110, 68, 255, 0.22);
-      box-shadow: 0 12px 28px rgba(110, 68, 255, 0.16);
+      background: linear-gradient(145deg, #e7f0fb 0%, #f3f6fc 100%);
+      border: 1.5px solid rgba(110, 68, 255, 0.22);
+      box-shadow: 0 20px 46px -16px rgba(110, 68, 255, 0.22), 0 6px 18px rgba(18, 24, 40, 0.06);
+      cursor: pointer;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+    }
+
+    .knowledge-thankyou-video-wrap.is-portrait {
+      max-width: min(320px, 100%);
+    }
+
+    .knowledge-thankyou-video-wrap:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 26px 56px -16px rgba(110, 68, 255, 0.28), 0 8px 22px rgba(6, 182, 212, 0.14);
+      border-color: rgba(110, 68, 255, 0.38);
     }
 
     .knowledge-thankyou-video-wrap video {
       width: 100%;
-      height: 100%;
-      object-fit: cover;
+      height: auto;
       display: block;
+      object-fit: contain;
+      user-select: none;
+    }
+
+    .knowledge-thankyou-video-wrap video::-webkit-media-controls,
+    .knowledge-thankyou-video-wrap video::-webkit-media-controls-enclosure {
+      display: none !important;
+    }
+
+    [data-theme="dark"] .knowledge-thankyou-video-wrap {
+      background: linear-gradient(145deg, #161b2e 0%, #1d2338 100%);
+      border-color: rgba(110, 68, 255, 0.36);
+      box-shadow: 0 22px 50px -14px rgba(0, 0, 0, 0.55), 0 0 32px rgba(110, 68, 255, 0.2);
+    }
+
+    [data-theme="dark"] .knowledge-thankyou-halo {
+      background: radial-gradient(ellipse at center, rgba(110, 68, 255, 0.28) 0%, rgba(6, 182, 212, 0.18) 45%, rgba(0, 0, 0, 0) 74%);
+    }
+
+    /* ============================================================
+       KNOWLEDGE QUIZ — INSTANT EVALUATION & AUTO-ADVANCE FEEDBACK
+       ============================================================ */
+    #view-knowledge .quiz-option-btn {
+      justify-content: space-between;
+      padding: 0.95rem 1.15rem;
+    }
+
+    #view-knowledge .quiz-option-main {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    #view-knowledge .quiz-option-status {
+      flex-shrink: 0;
+      font-family: var(--font-heading);
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      margin-left: 0.75rem;
+    }
+
+    #view-knowledge .quiz-option-btn:disabled {
+      cursor: default;
+      pointer-events: none;
+    }
+
+    #view-knowledge .quiz-option-btn.locked-muted {
+      opacity: 0.56;
+    }
+
+    #view-knowledge .quiz-option-btn.correct-choice {
+      background: #ecfdf5 !important;
+      border-color: #10b981 !important;
+      color: #065f46 !important;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.18) !important;
+      opacity: 1 !important;
+    }
+
+    #view-knowledge .quiz-option-btn.correct-choice .option-letter {
+      background: #10b981 !important;
+      border-color: #10b981 !important;
+      color: #ffffff !important;
+    }
+
+    #view-knowledge .quiz-option-btn.correct-choice .quiz-option-status {
+      color: #047857;
+    }
+
+    #view-knowledge .quiz-option-btn.wrong-choice {
+      background: #fef2f2 !important;
+      border-color: #ef4444 !important;
+      color: #991b1b !important;
+      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.16) !important;
+      opacity: 1 !important;
+    }
+
+    #view-knowledge .quiz-option-btn.wrong-choice .option-letter {
+      background: #ef4444 !important;
+      border-color: #ef4444 !important;
+      color: #ffffff !important;
+    }
+
+    #view-knowledge .quiz-option-btn.wrong-choice .quiz-option-status {
+      color: #b91c1c;
+    }
+
+    [data-theme="dark"] #view-knowledge .quiz-option-btn.correct-choice {
+      background: rgba(16, 185, 129, 0.16) !important;
+      border-color: #34d399 !important;
+      color: #d1fae5 !important;
+      box-shadow: 0 4px 18px rgba(16, 185, 129, 0.22) !important;
+    }
+
+    [data-theme="dark"] #view-knowledge .quiz-option-btn.correct-choice .quiz-option-status {
+      color: #6ee7b7;
+    }
+
+    [data-theme="dark"] #view-knowledge .quiz-option-btn.wrong-choice {
+      background: rgba(239, 68, 68, 0.16) !important;
+      border-color: #f87171 !important;
+      color: #fee2e2 !important;
+      box-shadow: 0 4px 18px rgba(239, 68, 68, 0.22) !important;
+    }
+
+    [data-theme="dark"] #view-knowledge .quiz-option-btn.wrong-choice .quiz-option-status {
+      color: #fca5a5;
+    }
+
+    #knowledgeInstantFeedback.instant-feedback-card {
+      display: none;
+      flex-direction: column;
+      gap: 0.7rem;
+      align-items: stretch;
+      text-align: left;
+      border-radius: 16px;
+      padding: 1.1rem 1.25rem;
+      margin-top: 1.25rem;
+    }
+
+    #knowledgeInstantFeedback .feedback-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    #knowledgeInstantFeedback.instant-feedback-card.correct {
+      background: #ecfdf5;
+      border: 1.5px solid #86efac;
+      color: #065f46;
+    }
+
+    #knowledgeInstantFeedback.instant-feedback-card.incorrect,
+    #knowledgeInstantFeedback.instant-feedback-card.wrong {
+      background: #fef2f2;
+      border: 1.5px solid #fca5a5;
+      color: #991b1b;
+    }
+
+    [data-theme="dark"] #knowledgeInstantFeedback.instant-feedback-card.correct {
+      background: rgba(16, 185, 129, 0.14);
+      border-color: rgba(52, 211, 153, 0.45);
+      color: #d1fae5;
+    }
+
+    [data-theme="dark"] #knowledgeInstantFeedback.instant-feedback-card.incorrect,
+    [data-theme="dark"] #knowledgeInstantFeedback.instant-feedback-card.wrong {
+      background: rgba(239, 68, 68, 0.14);
+      border-color: rgba(248, 113, 113, 0.45);
+      color: #fee2e2;
+    }
+
+    .knowledge-feedback-title {
+      display: block;
+      font-family: var(--font-heading);
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin-bottom: 0.2rem;
+    }
+
+    .knowledge-feedback-desc {
+      display: block;
+      font-size: 0.92rem;
+      line-height: 1.5;
+      opacity: 0.92;
+    }
+
+    .knowledge-feedback-next-note {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      opacity: 0.8;
+    }
+
+    .knowledge-auto-progress-track {
+      width: 100%;
+      height: 4px;
+      border-radius: 9999px;
+      background: rgba(15, 23, 42, 0.1);
+      overflow: hidden;
+    }
+
+    [data-theme="dark"] .knowledge-auto-progress-track {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .knowledge-auto-progress-bar {
+      height: 100%;
+      width: 0%;
+      border-radius: 9999px;
+      background: currentColor;
+      opacity: 0.65;
+      animation-name: knowledgeAutoAdvanceFill;
+      animation-timing-function: linear;
+      animation-fill-mode: forwards;
+    }
+
+    @keyframes knowledgeAutoAdvanceFill {
+      from { width: 0%; }
+      to { width: 100%; }
     }
 
     .tab-btn[disabled] {
@@ -1564,16 +1836,18 @@
             <!-- Rendered via renderKnowledgeQuestion() -->
           </div>
 
-          <!-- Instant Feedback Card -->
-          <div id="knowledgeInstantFeedback" class="instant-feedback-card" style="display: none;">
-            <span id="knowledgeFeedbackIcon" style="font-size: 1.4rem; line-height: 1;"></span>
-            <div id="knowledgeFeedbackText"></div>
-          </div>
-
-          <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 1.5rem;">
-            <button id="btnKnowledgeNext" class="btn btn-primary" onclick="handleKnowledgeNext()" disabled>
-              Next Question →
-            </button>
+          <!-- Instant Feedback Card (auto-advances after brief delay) -->
+          <div id="knowledgeInstantFeedback" class="instant-feedback-card" role="status" aria-live="polite" style="display: none;">
+            <div class="feedback-main-row">
+              <span id="knowledgeFeedbackIcon" style="font-size: 1.35rem; line-height: 1.2;"></span>
+              <div id="knowledgeFeedbackText" style="flex: 1;"></div>
+            </div>
+            <div class="knowledge-feedback-next-note">
+              <span id="knowledgeAutoNextNote">Moving to next question...</span>
+            </div>
+            <div class="knowledge-auto-progress-track" aria-hidden="true">
+              <div id="knowledgeAutoProgressBar" class="knowledge-auto-progress-bar"></div>
+            </div>
           </div>
         </div>
 
@@ -1590,19 +1864,6 @@
           <p id="knowledgeResultSubtitle" style="font-size: 1.1rem; color: var(--text-muted); margin-bottom: 1rem;">
             Here is your official session score based on today's AI & tech concepts:
           </p>
-
-          <!-- Knowledge Quiz Completion Thank-You Video -->
-          <div class="knowledge-thankyou-video-wrap">
-            <video
-              id="knowledgeThankYouVideo"
-              src="/assets/aistudio/Untitled_video__4__gwr_video_mvp_c252a539.mp4"
-              playsinline
-              loop
-              controls
-              preload="auto"
-              aria-label="Thank you celebration video"
-            ></video>
-          </div>
 
           <!-- Score & Badge Box -->
           <div class="badge-display-box">
@@ -1631,9 +1892,28 @@
             <button class="btn btn-secondary" id="btnRetakeKnowledge" onclick="retakeKnowledgeQuiz()">
               🔄 Retake Knowledge Quiz
             </button>
-            <button class="btn btn-yellow" id="btnViewExplorerBadge" onclick="handleCardClick()">
-              🏷️ View My Explorer Badge & Greeting
-            </button>
+          </div>
+
+          <!-- Closing Robot Greeting Video (at the very end of the Knowledge Quiz page) -->
+          <div class="knowledge-thankyou-section" id="knowledgeThankYouSection">
+            <h3 class="knowledge-thankyou-heading" id="knowledgeThankYouTitle">Thank You for Exploring with Aero-12</h3>
+            <p class="knowledge-thankyou-sub" id="knowledgeThankYouSubtitle">
+              Great job completing the AI Explorer Lab — keep questioning, building, and shaping the future of tech!
+            </p>
+            <div class="knowledge-thankyou-stage">
+              <div class="knowledge-thankyou-halo" aria-hidden="true"></div>
+              <div class="knowledge-thankyou-video-wrap" id="knowledgeThankYouVideoWrap" onclick="toggleKnowledgeVideoAudio()" title="Tap to toggle sound">
+                <video
+                  id="knowledgeThankYouVideo"
+                  src="/assets/aistudio/Untitled_video__4__gwr_video_mvp_c252a539.mp4"
+                  playsinline
+                  webkit-playsinline
+                  loop
+                  preload="auto"
+                  aria-label="Thank you robot greeting video"
+                ></video>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -4906,9 +5186,10 @@
         return;
       }
 
-      // Pause Knowledge Quiz completion video if leaving Knowledge tab
+      // Pause Knowledge Quiz completion video & clear pending auto-advance if leaving Knowledge tab
       if (STATE.currentTab === "knowledge" && targetTab !== "knowledge") {
         stopVideoSafely(document.getElementById("knowledgeThankYouVideo"));
+        if (typeof clearKnowledgeAutoAdvance === "function") clearKnowledgeAutoAdvance();
       }
 
       STATE.currentTab = targetTab;
@@ -4928,8 +5209,18 @@
 
       if (targetTab === "career" && !STATE.careerResults) {
         goToCareerStep(STATE.careerStep || 1);
-      } else if (targetTab === "knowledge" && (!STATE.knowledgeQuestions || !STATE.knowledgeQuestions.length)) {
-        initKnowledgeQuiz();
+      } else if (targetTab === "knowledge") {
+        if (!STATE.knowledgeQuestions || !STATE.knowledgeQuestions.length) {
+          initKnowledgeQuiz();
+        } else {
+          const resultCard = document.getElementById("knowledgeResultCard");
+          if (resultCard && resultCard.style.display !== "none") {
+            playVideoSafely(document.getElementById("knowledgeThankYouVideo"));
+          } else if (STATE.knowledgeAnswers[STATE.currentKnowledgeIndex] !== null) {
+            // User left mid-feedback delay: advance cleanly to the next unanswered question or results
+            handleKnowledgeNext();
+          }
+        }
       }
 
       if (STATE.studentId && targetTab !== "guide") {
@@ -6286,7 +6577,17 @@
       return copy;
     }
 
+    function clearKnowledgeAutoAdvance() {
+      if (STATE.knowledgeAutoAdvanceTimer) {
+        clearTimeout(STATE.knowledgeAutoAdvanceTimer);
+        STATE.knowledgeAutoAdvanceTimer = null;
+      }
+      STATE.knowledgeLocked = false;
+    }
+
     function initKnowledgeQuiz() {
+      clearKnowledgeAutoAdvance();
+
       // Randomize question order
       const rawShuffled = shuffleArray(KNOWLEDGE_QUESTIONS);
 
@@ -6318,6 +6619,7 @@
       STATE.knowledgeAnswers = new Array(STATE.knowledgeQuestions.length).fill(null);
       STATE.knowledgeTimerSeconds = 0;
       STATE.knowledgeResults = null;
+      STATE.knowledgeLocked = false;
 
       startKnowledgeTimer();
 
@@ -6363,7 +6665,6 @@
       const questionText = document.getElementById("knowledgeQuestionText");
       const optionsList = document.getElementById("knowledgeOptionsList");
       const feedbackCard = document.getElementById("knowledgeInstantFeedback");
-      const btnNext = document.getElementById("btnKnowledgeNext");
 
       const categoryText = isTa ? (q.category_ta || q.category) : q.category;
       const qText = isTa ? (q.question_ta || q.question) : q.question;
@@ -6385,23 +6686,19 @@
         feedbackCard.style.display = "none";
       }
 
-      if (btnNext) {
-        btnNext.disabled = !hasAnswered;
-        if (qIndex === STATE.knowledgeQuestions.length - 1) {
-          btnNext.textContent = isTa ? "இறுதி மதிப்பெண் காண்க 🏆" : "See Final Score 🏆";
-        } else {
-          btnNext.textContent = isTa ? "அடுத்த கேள்வி →" : "Next Question →";
-        }
-      }
-
       const letters = ["A", "B", "C", "D"];
       optionsList.innerHTML = activeOptions.map((optText, optIdx) => {
         let extraClass = "";
+        let statusLabel = "";
         if (hasAnswered) {
           if (optIdx === q.correct) {
             extraClass = "correct-choice";
+            statusLabel = isTa ? "✓ சரியான பதில்" : "✓ Correct";
           } else if (optIdx === answeredIdx) {
             extraClass = "wrong-choice";
+            statusLabel = isTa ? "✕ தவறான தேர்வு" : "✕ Incorrect";
+          } else {
+            extraClass = "locked-muted";
           }
         }
 
@@ -6414,58 +6711,90 @@
             role="radio"
             aria-checked="${optIdx === answeredIdx ? 'true' : 'false'}"
           >
-            <span class="option-letter">${letters[optIdx]}</span>
-            <span>${escapeHtml(optText)}</span>
+            <span class="quiz-option-main">
+              <span class="option-letter">${letters[optIdx]}</span>
+              <span>${escapeHtml(optText)}</span>
+            </span>
+            ${statusLabel ? `<span class="quiz-option-status">${statusLabel}</span>` : ""}
           </button>
         `;
       }).join("");
 
-      // If already answered, show feedback
+      // If already answered (e.g. user toggled language during feedback), refresh feedback text without restarting timer
       if (hasAnswered) {
-        showKnowledgeFeedback(answeredIdx === q.correct, activeExplanation);
+        showKnowledgeFeedback(answeredIdx === q.correct, activeExplanation, null);
       }
     }
 
     function selectKnowledgeOption(optIdx) {
       const qIndex = STATE.currentKnowledgeIndex;
-      if (STATE.knowledgeAnswers[qIndex] !== null) return; // Prevent double select
+      if (STATE.knowledgeLocked || STATE.knowledgeAnswers[qIndex] !== null) return; // Immediately lock & prevent multiple clicks
 
+      STATE.knowledgeLocked = true;
       STATE.knowledgeAnswers[qIndex] = optIdx;
+
       const q = STATE.knowledgeQuestions[qIndex];
       const isCorrect = optIdx === q.correct;
       const isTa = STATE.quizLanguage === "ta";
       const activeExplanation = isTa ? (q.explanation_ta || q.explanation) : q.explanation;
 
+      // Immediately lock options & highlight correct/incorrect answers
       renderKnowledgeQuestion();
-      showKnowledgeFeedback(isCorrect, activeExplanation);
 
-      const btnNext = document.getElementById("btnKnowledgeNext");
-      if (btnNext) btnNext.disabled = false;
+      const delayMs = isCorrect ? 1700 : 2300;
+      showKnowledgeFeedback(isCorrect, activeExplanation, delayMs);
+
+      // Automatically proceed to the next question (or results screen after final question)
+      if (STATE.knowledgeAutoAdvanceTimer) {
+        clearTimeout(STATE.knowledgeAutoAdvanceTimer);
+      }
+      STATE.knowledgeAutoAdvanceTimer = setTimeout(() => {
+        STATE.knowledgeAutoAdvanceTimer = null;
+        handleKnowledgeNext();
+      }, delayMs);
     }
 
-    function showKnowledgeFeedback(isCorrect, explanation) {
+    function showKnowledgeFeedback(isCorrect, explanation, delayMs) {
       const feedbackCard = document.getElementById("knowledgeInstantFeedback");
       const iconEl = document.getElementById("knowledgeFeedbackIcon");
       const textEl = document.getElementById("knowledgeFeedbackText");
+      const autoNextNote = document.getElementById("knowledgeAutoNextNote");
+      const progressBar = document.getElementById("knowledgeAutoProgressBar");
 
       if (!feedbackCard || !iconEl || !textEl) return;
 
       const isTa = STATE.quizLanguage === "ta";
+      const isFinalQuestion = STATE.currentKnowledgeIndex >= STATE.knowledgeQuestions.length - 1;
+
       feedbackCard.className = `instant-feedback-card ${isCorrect ? 'correct' : 'incorrect'}`;
       iconEl.textContent = isCorrect ? "✅" : "❌";
 
       const title = isCorrect 
-        ? (isTa ? 'அருமை! சரியான பதில்.' : 'Spot on! Correct answer.')
-        : (isTa ? 'தவறான பதில்.' : 'Not quite.');
+        ? (isTa ? 'சரியான பதில்!' : 'Correct Answer!')
+        : (isTa ? 'தவறான பதில்' : 'Incorrect Answer');
 
       textEl.innerHTML = `
-        <strong>${title}</strong><br>
-        <span>${escapeHtml(explanation)}</span>
+        <strong class="knowledge-feedback-title">${title}</strong>
+        <span class="knowledge-feedback-desc">${escapeHtml(explanation)}</span>
       `;
+
+      if (autoNextNote) {
+        autoNextNote.textContent = isFinalQuestion
+          ? (isTa ? "இறுதி மதிப்பெண் தயாராகிறது..." : "Loading your final results...")
+          : (isTa ? "அடுத்த கேள்விக்கு செல்கிறது..." : "Moving to next question...");
+      }
+
+      if (progressBar && typeof delayMs === "number") {
+        progressBar.style.animation = "none";
+        void progressBar.offsetWidth; // Restart progress bar animation cleanly
+        progressBar.style.animation = `knowledgeAutoAdvanceFill ${delayMs}ms linear forwards`;
+      }
+
       feedbackCard.style.display = "flex";
     }
 
     function handleKnowledgeNext() {
+      clearKnowledgeAutoAdvance();
       if (STATE.currentKnowledgeIndex < STATE.knowledgeQuestions.length - 1) {
         STATE.currentKnowledgeIndex++;
         renderKnowledgeQuestion();
@@ -6475,6 +6804,7 @@
     }
 
     function finishKnowledgeQuiz() {
+      clearKnowledgeAutoAdvance();
       stopKnowledgeTimer();
 
       const isTa = STATE.quizLanguage === "ta";
@@ -6736,7 +7066,8 @@
         btnProceedKnowledge: 'Proceed to Knowledge Quiz 🏆',
         wrongReviewTitle: 'Review Your Mistakes & Understand Why:',
         btnRetakeKnowledge: 'Retake Quiz 🔄',
-        btnViewExplorerBadge: 'View Explorer Badge 🏷️',
+        knowledgeThankYouTitle: 'Thank You for Exploring with Aero-12',
+        knowledgeThankYouSubtitle: 'Great job completing the AI Explorer Lab — keep questioning, building, and shaping the future of tech!',
         footerText: 'AI Explorer · Department of Computer Science and Engineering (CSE), SSM Institute of Engineering and Technology (SSMIET), Dindigul.'
       },
       ta: {
@@ -6853,7 +7184,8 @@
         btnProceedKnowledge: 'அறிவு வினாடி வினாவிற்கு செல்க 🏆',
         wrongReviewTitle: 'தவறான பதில்களை மறுபரிசீலனை செய்து காரணத்தைப் புரிந்து கொள்ளுங்கள்:',
         btnRetakeKnowledge: 'மீண்டும் வினாடி வினா எழுத 🔄',
-        btnViewExplorerBadge: 'எக்ஸ்ப்ளோரர் அடையாள அட்டை காண்க 🏷️',
+        knowledgeThankYouTitle: 'Aero-12 உடன் பயணித்தமைக்கு நன்றி!',
+        knowledgeThankYouSubtitle: 'AI Explorer ஆய்வகத்தை வெற்றிகரமாக நிறைவு செய்தமைக்கு வாழ்த்துகள் — தொடர்ந்து கற்று தொழில்நுட்ப எதிர்காலத்தை உருவாக்குங்கள்!',
         footerText: 'AI Explorer · கணினி அறிவியல் மற்றும் பொறியியல் துறை (CSE), எஸ்எஸ்எம் இன்ஸ்டிடியூட் ஆப் இன்ஜினியரிங் அண்ட் டெக்னாலஜி (SSMIET), திண்டுக்கல்.'
       }
     };
@@ -7010,7 +7342,8 @@
       // Knowledge Quiz
       setText("knowledgeWrongReviewTitle", dict.wrongReviewTitle);
       setText("btnRetakeKnowledge", dict.btnRetakeKnowledge);
-      setText("btnViewExplorerBadge", dict.btnViewExplorerBadge);
+      setText("knowledgeThankYouTitle", dict.knowledgeThankYouTitle);
+      setText("knowledgeThankYouSubtitle", dict.knowledgeThankYouSubtitle);
 
       // Footer
       setText("footerText", dict.footerText);
@@ -7195,11 +7528,50 @@
       });
     }
 
-    // Call init3DCardTilt and initHeroVideoExperience on DOM ready
+    function initKnowledgeVideoExperience() {
+      const video = document.getElementById("knowledgeThankYouVideo");
+      const wrap = document.getElementById("knowledgeThankYouVideoWrap");
+      if (!video || !wrap) return;
+
+      video.playsInline = true;
+      video.loop = true;
+
+      const syncVideoAspectRatio = () => {
+        if (!video.videoWidth || !video.videoHeight) return;
+        const isPortrait = video.videoHeight > video.videoWidth;
+        wrap.classList.toggle("is-portrait", isPortrait);
+        wrap.style.aspectRatio = `${video.videoWidth} / ${video.videoHeight}`;
+      };
+
+      if (video.readyState >= 1) {
+        syncVideoAspectRatio();
+      }
+      video.addEventListener("loadedmetadata", syncVideoAspectRatio);
+    }
+
+    function toggleKnowledgeVideoAudio() {
+      const video = document.getElementById("knowledgeThankYouVideo");
+      if (!video) return;
+      if (video.paused) {
+        video.muted = false;
+        video.play().catch(() => {
+          video.muted = true;
+          video.play().catch(() => {});
+        });
+      } else {
+        video.muted = !video.muted;
+        if (!video.muted) video.volume = 1.0;
+      }
+    }
+
+    // Call init3DCardTilt, initHeroVideoExperience, and initKnowledgeVideoExperience on DOM ready
     function initAll3DExperiences() {
       init3DCardTilt();
       if (typeof initHeroVideoExperience === "function") {
         initHeroVideoExperience();
+      }
+      if (typeof initKnowledgeVideoExperience === "function") {
+        initKnowledgeVideoExperience();
       }
     }
 
